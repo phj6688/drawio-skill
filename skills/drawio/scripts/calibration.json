@@ -1,0 +1,174 @@
+{
+  "classes": {
+    "wide": 0.6327,
+    "xwide": 0.8278,
+    "narrow": 0.2632,
+    "body": 0.5281
+  },
+  "bold_factor": 1.0765,
+  "flat_p95_mixed": 0.6373,
+  "measured_rows": [
+    {
+      "text": "ABCDEFGHJKLNOPQRSTUVYZ0123456789@#%_",
+      "fontSize": 12,
+      "bold": false,
+      "class": "wide",
+      "len": 36,
+      "width_u": 273.32,
+      "char_w_u": 7.592,
+      "ratio": 0.6327
+    },
+    {
+      "text": "MWMWMWMWMWMWmwmwmwmwmwmw",
+      "fontSize": 12,
+      "bold": false,
+      "class": "xwide",
+      "len": 24,
+      "width_u": 238.4,
+      "char_w_u": 9.933,
+      "ratio": 0.8278
+    },
+    {
+      "text": "iltfjr.,:;'()[]iltfjr.,:;'()[]",
+      "fontSize": 12,
+      "bold": false,
+      "class": "narrow",
+      "len": 30,
+      "width_u": 94.76,
+      "char_w_u": 3.159,
+      "ratio": 0.2632
+    },
+    {
+      "text": "aeosnucdgkbpqvxyzaeosnucdgkbpqvxyz",
+      "fontSize": 12,
+      "bold": false,
+      "class": "body",
+      "len": 34,
+      "width_u": 215.46,
+      "char_w_u": 6.337,
+      "ratio": 0.5281
+    },
+    {
+      "text": "MMMMMMMMMMMMMMMM",
+      "fontSize": 12,
+      "bold": false,
+      "class": null,
+      "len": 16,
+      "width_u": 157.61,
+      "char_w_u": 9.85,
+      "ratio": 0.8209
+    },
+    {
+      "text": "iiiiiiiiiiiiiiii",
+      "fontSize": 12,
+      "bold": false,
+      "class": null,
+      "len": 16,
+      "width_u": 40.9,
+      "char_w_u": 2.556,
+      "ratio": 0.213
+    },
+    {
+      "text": "REST / HTTP",
+      "fontSize": 12,
+      "bold": false,
+      "class": "mixed",
+      "len": 11,
+      "width_u": 70.82,
+      "char_w_u": 6.438,
+      "ratio": 0.5365
+    },
+    {
+      "text": "PromQL query",
+      "fontSize": 12,
+      "bold": false,
+      "class": "mixed",
+      "len": 12,
+      "width_u": 75.81,
+      "char_w_u": 6.318,
+      "ratio": 0.5265
+    },
+    {
+      "text": "SQL",
+      "fontSize": 12,
+      "bold": false,
+      "class": "mixed",
+      "len": 3,
+      "width_u": 22.94,
+      "char_w_u": 7.648,
+      "ratio": 0.6373
+    },
+    {
+      "text": "HTTPS",
+      "fontSize": 12,
+      "bold": false,
+      "class": "mixed",
+      "len": 5,
+      "width_u": 37.91,
+      "char_w_u": 7.581,
+      "ratio": 0.6318
+    },
+    {
+      "text": "auth-service (FastAPI) v2.1",
+      "fontSize": 12,
+      "bold": false,
+      "class": "mixed",
+      "len": 27,
+      "width_u": 143.64,
+      "char_w_u": 5.32,
+      "ratio": 0.4433
+    },
+    {
+      "text": "Orchestrate Linear Backlog Payments",
+      "fontSize": 12,
+      "bold": false,
+      "class": "mixed",
+      "len": 35,
+      "width_u": 200.5,
+      "char_w_u": 5.729,
+      "ratio": 0.4774
+    },
+    {
+      "text": "REST / HTTP",
+      "fontSize": 11,
+      "bold": false,
+      "class": "mixed",
+      "len": 11,
+      "width_u": 64.84,
+      "char_w_u": 5.894,
+      "ratio": 0.5359
+    },
+    {
+      "text": "PromQL query",
+      "fontSize": 14,
+      "bold": false,
+      "class": "mixed",
+      "len": 12,
+      "width_u": 88.78,
+      "char_w_u": 7.398,
+      "ratio": 0.5284
+    },
+    {
+      "text": "Orchestrate Linear Backlog",
+      "fontSize": 12,
+      "bold": false,
+      "class": "boldpair",
+      "len": 26,
+      "width_u": 143.64,
+      "char_w_u": 5.525,
+      "ratio": 0.4604
+    },
+    {
+      "text": "Orchestrate Linear Backlog",
+      "fontSize": 12,
+      "bold": true,
+      "class": "boldpair",
+      "len": 26,
+      "width_u": 154.61,
+      "char_w_u": 5.947,
+      "ratio": 0.4956
+    }
+  ],
+  "scale_px_per_unit": 1.0025,
+  "image": "rlespinasse/drawio-desktop-headless:v1.62.0"
+}

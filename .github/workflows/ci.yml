@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, master]
+  push:
+    branches: [dev, master]
+  workflow_dispatch:
+
+# One run per ref; new pushes cancel superseded runs.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate-skill:
+    name: Validate skill & manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+      - name: SKILL.md frontmatter has name + description
+        run: |
+          python - <<'PY'
+          import sys, glob, yaml
+          skills = glob.glob('SKILL.md') + glob.glob('skills/**/SKILL.md', recursive=True)
+          if not skills:
+              print("::error::no SKILL.md found at root or under skills/")
+              sys.exit(1)
+          bad = 0
+          for path in skills:
+              text = open(path, encoding='utf-8').read()
+              if not text.startswith('---'):
+                  print(f"::error file={path}::missing YAML frontmatter")
+                  bad += 1; continue
+              fm = text.split('---', 2)[1]
+              try:
+                  data = yaml.safe_load(fm) or {}
+              except Exception as e:
+                  print(f"::error file={path}::invalid frontmatter YAML: {e}")
+                  bad += 1; continue
+              for key in ('name', 'description'):
+                  if not data.get(key):
+                      print(f"::error file={path}::frontmatter missing '{key}'")
+                      bad += 1
+              print(f"OK: {path}")
+          sys.exit(1 if bad else 0)
+          PY
+      - name: Validate JSON manifests
+        run: |
+          python - <<'PY'
+          import sys, glob, json
+          bad = 0
+          for f in glob.glob('**/plugin.json', recursive=True) + glob.glob('**/*.json', recursive=True):
+              try:
+                  json.load(open(f, encoding='utf-8'))
+                  print(f"OK: {f}")
+              except Exception as e:
+                  print(f"::error file={f}::invalid JSON: {e}")
+                  bad += 1
+          sys.exit(1 if bad else 0)
+          PY
+
+  fixtures:
+    name: Validator fixture suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run the 19-fixture regression suite
+        run: python skills/drawio/tests/run_fixtures.py
+
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run shellcheck on scripts
+        run: |
+          mapfile -t files < <(git ls-files '*.sh')
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No shell scripts; skipping shellcheck (gate stays green)."
+            exit 0
+          fi
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          printf '%s\n' "${files[@]}"
+          shellcheck "${files[@]}"
+
+  markdownlint:
+    name: Markdown (lenient)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: markdownlint (non-blocking style, blocking parse)
+        run: |
+          mapfile -t md < <(git ls-files '*.md')
+          if [ ${#md[@]} -eq 0 ]; then
+            echo "No markdown files."
+            exit 0
+          fi
+          for f in "${md[@]}"; do
+            if [ ! -s "$f" ]; then echo "::error::empty markdown: $f"; exit 1; fi
+          done
+          npx --yes markdownlint-cli2 "**/*.md" "#node_modules" || \
+            echo "::warning::markdownlint reported style issues (non-blocking)."
+
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [validate-skill, fixtures, shellcheck, markdownlint]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every job to pass
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "::error::A required CI job did not succeed."
+          echo "Results: ${{ join(needs.*.result, ' ') }}"
+          exit 1
+      - name: All gates green
+        run: echo "All CI jobs passed."
