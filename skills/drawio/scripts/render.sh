@@ -66,8 +66,8 @@ run_export png "$PNG_BASE" -s 1.5
 run_export svg "$SVG_BASE"
 
 # docker wrote into IN_DIR; move to the requested location if it differs.
-[ "${IN_DIR}/${PNG_BASE}" != "$OUT_PNG" ] && mv -f "${IN_DIR}/${PNG_BASE}" "$OUT_PNG" 2>/dev/null || true
-[ "${IN_DIR}/${SVG_BASE}" != "$OUT_SVG" ] && mv -f "${IN_DIR}/${SVG_BASE}" "$OUT_SVG" 2>/dev/null || true
+if [ "${IN_DIR}/${PNG_BASE}" != "$OUT_PNG" ]; then mv -f "${IN_DIR}/${PNG_BASE}" "$OUT_PNG" 2>/dev/null || true; fi
+if [ "${IN_DIR}/${SVG_BASE}" != "$OUT_SVG" ]; then mv -f "${IN_DIR}/${SVG_BASE}" "$OUT_SVG" 2>/dev/null || true; fi
 
 if [ ! -s "$OUT_SVG" ] || [ ! -s "$OUT_PNG" ]; then
   echo "RENDER PRODUCED A BLANK OR DEGENERATE IMAGE"
