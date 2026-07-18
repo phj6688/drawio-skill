@@ -561,11 +561,13 @@ def external_node_label(c, model):
 
 
 # ---- checks ---------------------------------------------------------------
-def run_checks(name, model, cells, page_attrs, stage, rep):
+def run_checks(name, model, cells, page_attrs, stage, rep, raw_ids=None):
     geo_stage = stage in ("hand", "post-layout")
 
-    # 2 root cells + unique ids
-    ids = [c.id for c in cells.values()]
+    # 2 root cells + unique ids. cells is a dict keyed by id, so its values are
+    # unique by construction; duplicate detection must run on the raw parse-order
+    # ids collected before dedup (drawio drops one dup cell and mis-wires edges).
+    ids = raw_ids if raw_ids is not None else [c.id for c in cells.values()]
     dupes = {i for i in ids if ids.count(i) > 1}
     if dupes:
         rep.gate(2, f"[{name}] duplicate cell ids: {sorted(dupes)}")
@@ -1055,11 +1057,13 @@ def validate(path, stage, fixture_mode):
             continue
         cells = {}
         order = []
+        raw_ids = []
         for el in root.findall("mxCell"):
             c = Cell(el)
             if c.id is None:
                 rep.gate(2, f"[{name}] a cell is missing its id")
                 continue
+            raw_ids.append(c.id)
             cells[c.id] = c
             order.append(c)
         for obj in root.findall("object") + root.findall("UserObject"):
@@ -1069,6 +1073,7 @@ def validate(path, stage, fixture_mode):
                 c.id = obj.get("id")
                 c.value = obj.get("label", c.value)
                 if c.id:
+                    raw_ids.append(c.id)
                     cells[c.id] = c
         resolve_abs(cells)
         page_attrs = {}
@@ -1079,7 +1084,7 @@ def validate(path, stage, fixture_mode):
                     page_attrs[k] = float(v)
                 except ValueError:
                     pass
-        run_checks(name, model, cells, page_attrs, stage, rep)
+        run_checks(name, model, cells, page_attrs, stage, rep, raw_ids)
     return rep
 
 
