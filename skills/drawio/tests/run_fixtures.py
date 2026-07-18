@@ -37,8 +37,12 @@ def run_one(name):
             [sys.executable, VALIDATE, fixture, "--stage", "hand",
              "--fixture-mode", "--json", tmp],
             capture_output=True, text=True)
-        with open(tmp, encoding="utf-8") as f:
-            report = json.load(f)
+        try:
+            with open(tmp, encoding="utf-8") as f:
+                report = json.load(f)
+        except (ValueError, OSError):
+            # validator crashed (rc 2, no/empty JSON): report it, do not traceback
+            report = {"_crash": True, "rc": proc.returncode, "stderr": proc.stderr}
     finally:
         os.remove(tmp)
     return report, proc.stdout, proc.returncode
@@ -52,6 +56,9 @@ def check(name, expected):
     report, stdout, rc = run_one(name)
     if isinstance(report, list):  # missing fixture
         return report
+    if isinstance(report, dict) and report.get("_crash"):
+        return [f"validator crashed rc={report['rc']}: "
+                f"{(report.get('stderr') or '').strip()[:200]}"]
     problems = []
     is_good = name.startswith("good_")
     got_gates = set(report.get("gates_failed", []))
@@ -92,10 +99,33 @@ def check(name, expected):
     return problems
 
 
+FIXTURE_FLOOR = 19  # bump alongside additions; guards against silent mass deletion
+
+
+def integrity_problems(names):
+    """Fixture-suite integrity: no orphan .drawio, no shrinkage below the floor."""
+    problems = []
+    stems = {f[:-7] for f in os.listdir(FIX_DIR) if f.endswith(".drawio")}
+    orphans = sorted(stems - set(names))
+    if orphans:
+        problems.append(f"fixtures with no expected/*.json (silently untested): {orphans}")
+    if len(names) < FIXTURE_FLOOR:
+        problems.append(f"fixture count {len(names)} is below the floor {FIXTURE_FLOOR} "
+                        f"(were expected/*.json files removed?)")
+    return problems
+
+
 def main():
     names = sorted(f[:-5] for f in os.listdir(EXP_DIR) if f.endswith(".json"))
     if not names:
         print("no expected fixtures found", file=sys.stderr)
+        return 1
+    integ = integrity_problems(names)
+    if integ:
+        for p in integ:
+            print(f"  INTEGRITY  {p}")
+        print("")
+        print("FIXTURE SUITE INTEGRITY FAILED")
         return 1
     failures = 0
     for name in names:
