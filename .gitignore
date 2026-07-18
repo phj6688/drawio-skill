@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# drawio toolchain artifacts (the render/layout/look loop writes these next to inputs).
+# calibration.json is committed by design and is NOT ignored.
+skills/drawio/tests/fixtures/*.png
+skills/drawio/tests/fixtures/*.svg
+skills/drawio/tests/fixtures/*.auto.drawio
+skills/drawio/tests/fixtures/*.auto.report.json
+crops/
+looked.manifest
+report.json
+*.auto.drawio
+*.auto.report.json

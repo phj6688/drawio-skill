@@ -91,6 +91,12 @@ PALETTE = {
     "gray":   ("#F5F5F5", "#666666"),
 }
 
+# ---- Input safety (hostile / corrupt .drawio) ----
+# [DERIVED] A 25-node in-gate diagram is KB-scale uncompressed; 32 MiB is ~1000x
+# headroom yet a hard ceiling on the zlib inflate of a compressed <diagram> body,
+# so a decompression bomb aborts instead of exhausting RAM.
+MAX_DECOMPRESSED_BYTES = 32 * 1024 * 1024
+
 # ---- Loop caps ----
 VALIDATOR_FIX_ROUNDS = 3
 VISION_ROUNDS = 2

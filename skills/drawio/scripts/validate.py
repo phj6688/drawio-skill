@@ -33,6 +33,7 @@ from constants import (
     DENSITY_GATE, DENSITY_WARN, ASPECT_WARN_HI, ASPECT_WARN_LO, UTIL_WARN_LO,
     FANOUT_LANE_AT, EDGES_PER_SIDE_WARN, LUMINANCE_DARK_TEXT,
     crossing_warn_threshold, LEGEND_ID_TOKEN, CONTAINER_TINT_FILLS,
+    MAX_DECOMPRESSED_BYTES,
 )
 
 NEAR_MISS_FACTOR = 2  # a clearance-band multiple counts as a near-miss region
@@ -299,12 +300,42 @@ def _geom_offset(el, key):
 
 
 # ---- file loading ---------------------------------------------------------
+_DTD_RE = re.compile(r"<!(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+
+
+def reject_dangerous_xml(text):
+    """Reject DTD/entity declarations before parsing (billion-laughs defense).
+
+    Legitimate .drawio files never carry a DOCTYPE or ENTITY; guarding here does
+    not depend on the host libexpat version. Raises ValueError -> gate 1.
+    """
+    if _DTD_RE.search(text):
+        raise ValueError("xml doctype/entity declarations are not allowed "
+                         "(possible entity-expansion attack)")
+
+
+def _bounded_inflate(raw, wbits):
+    """zlib-inflate raw with a hard output ceiling; a bomb raises ValueError."""
+    d = zlib.decompressobj(wbits)
+    out = d.decompress(raw, MAX_DECOMPRESSED_BYTES + 1)
+    if len(out) > MAX_DECOMPRESSED_BYTES or d.unconsumed_tail:
+        raise ValueError(
+            f"decompressed diagram body exceeds {MAX_DECOMPRESSED_BYTES} bytes "
+            "(possible decompression bomb)")
+    out += d.flush()
+    if len(out) > MAX_DECOMPRESSED_BYTES:
+        raise ValueError(
+            f"decompressed diagram body exceeds {MAX_DECOMPRESSED_BYTES} bytes "
+            "(possible decompression bomb)")
+    return out.decode("utf-8")
+
+
 def decompress_body(text):
     raw = base64.b64decode(text)
     try:
-        xml = zlib.decompress(raw, -15).decode("utf-8")
+        xml = _bounded_inflate(raw, -15)
     except zlib.error:
-        xml = zlib.decompress(raw).decode("utf-8")
+        xml = _bounded_inflate(raw, 15)  # oversize ValueError propagates, not retried
     return urllib.parse.unquote(xml)
 
 
@@ -312,6 +343,7 @@ def load_pages(path):
     """Return [(page_name, mxGraphModel_element)] handling mxfile, bare model, compressed bodies."""
     with open(path, encoding="utf-8") as f:
         data = f.read()
+    reject_dangerous_xml(data)  # parse point 1: the raw file text
     root = ET.fromstring(data)
     tag = root.tag.split("}")[-1]
     if tag == "mxGraphModel":
@@ -325,7 +357,9 @@ def load_pages(path):
         if model is None:
             body = (dia.text or "").strip()
             if body:
-                model = ET.fromstring(decompress_body(body))
+                body_xml = decompress_body(body)
+                reject_dangerous_xml(body_xml)  # parse point 2: the decompressed body
+                model = ET.fromstring(body_xml)
         if model is None:
             raise ValueError(f"diagram '{name}' has no mxGraphModel body")
         pages.append((name, model))
@@ -561,11 +595,13 @@ def external_node_label(c, model):
 
 
 # ---- checks ---------------------------------------------------------------
-def run_checks(name, model, cells, page_attrs, stage, rep):
+def run_checks(name, model, cells, page_attrs, stage, rep, raw_ids=None):
     geo_stage = stage in ("hand", "post-layout")
 
-    # 2 root cells + unique ids
-    ids = [c.id for c in cells.values()]
+    # 2 root cells + unique ids. cells is a dict keyed by id, so its values are
+    # unique by construction; duplicate detection must run on the raw parse-order
+    # ids collected before dedup (drawio drops one dup cell and mis-wires edges).
+    ids = raw_ids if raw_ids is not None else [c.id for c in cells.values()]
     dupes = {i for i in ids if ids.count(i) > 1}
     if dupes:
         rep.gate(2, f"[{name}] duplicate cell ids: {sorted(dupes)}")
@@ -1055,11 +1091,13 @@ def validate(path, stage, fixture_mode):
             continue
         cells = {}
         order = []
+        raw_ids = []
         for el in root.findall("mxCell"):
             c = Cell(el)
             if c.id is None:
                 rep.gate(2, f"[{name}] a cell is missing its id")
                 continue
+            raw_ids.append(c.id)
             cells[c.id] = c
             order.append(c)
         for obj in root.findall("object") + root.findall("UserObject"):
@@ -1069,6 +1107,7 @@ def validate(path, stage, fixture_mode):
                 c.id = obj.get("id")
                 c.value = obj.get("label", c.value)
                 if c.id:
+                    raw_ids.append(c.id)
                     cells[c.id] = c
         resolve_abs(cells)
         page_attrs = {}
@@ -1079,7 +1118,7 @@ def validate(path, stage, fixture_mode):
                     page_attrs[k] = float(v)
                 except ValueError:
                     pass
-        run_checks(name, model, cells, page_attrs, stage, rep)
+        run_checks(name, model, cells, page_attrs, stage, rep, raw_ids)
     return rep
 
 
