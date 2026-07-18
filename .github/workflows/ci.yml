@@ -58,15 +58,36 @@ jobs:
       - name: Validate JSON manifests
         run: |
           python - <<'PY'
-          import sys, glob, json
+          import subprocess, sys, json, os
+          # git ls-files sees dot-directories; glob('**/*.json') silently skips them,
+          # so .claude-plugin/plugin.json (the file the loader parses) went unchecked.
+          files = subprocess.run(["git", "ls-files", "*.json"],
+                                 capture_output=True, text=True, check=True).stdout.split()
           bad = 0
-          for f in glob.glob('**/plugin.json', recursive=True) + glob.glob('**/*.json', recursive=True):
+          for f in files:
               try:
                   json.load(open(f, encoding='utf-8'))
                   print(f"OK: {f}")
               except Exception as e:
                   print(f"::error file={f}::invalid JSON: {e}")
                   bad += 1
+          manifest = ".claude-plugin/plugin.json"
+          if manifest not in files:
+              print(f"::error::{manifest} not found (plugin machinery parses it)")
+              bad += 1
+          else:
+              try:
+                  data = json.load(open(manifest, encoding='utf-8'))
+                  for key in ("name", "version", "skills"):
+                      if not data.get(key):
+                          print(f"::error file={manifest}::missing required key '{key}'")
+                          bad += 1
+                  skills = data.get("skills")
+                  if skills and not os.path.exists(skills.lstrip("./")):
+                      print(f"::error file={manifest}::skills path '{skills}' does not exist")
+                      bad += 1
+              except Exception:
+                  pass  # JSON parse error already reported above
           sys.exit(1 if bad else 0)
           PY
 
