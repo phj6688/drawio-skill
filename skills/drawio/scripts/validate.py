@@ -1183,11 +1183,13 @@ def main(argv=None):
         return 2
     try:
         rep = validate(args.file, args.stage, args.fixture_mode)
-    except (ET.ParseError, ValueError) as e:
-        # check 1: malformed XML or a non-mxfile/mxGraphModel root is a well-formedness gate
+    except (ET.ParseError, ValueError, zlib.error, MemoryError) as e:
+        # check 1: any input-derived fault is a bad FILE, not a broken tool -- malformed
+        # XML, a non-mxfile root, a corrupt/oversize compressed body, a rejected DTD.
+        # These belong on exit 1 (fix the file); exit 2 stays for genuine tool faults.
         print("drawio structural report")
         print("\nGATES (blocking):")
-        print(f"  [ 1] well-formed XML / valid root failed: {e}")
+        print(f"  [ 1] malformed or unsafe input file: {e}")
         print("\nGATES FAILED: 1")
         if args.json_path:
             with open(args.json_path, "w", encoding="utf-8") as f:
