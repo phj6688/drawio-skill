@@ -1,0 +1,13 @@
+<mxfile host="fixture" compressed="false">
+  <diagram id="c1" name="contrast">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" page="1" pageWidth="850" pageHeight="400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n1" value="alpha" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1A1A2E;strokeColor=#0D0D1A;" vertex="1" parent="1"><mxGeometry x="40" y="40" width="120" height="60" as="geometry" /></mxCell>
+        <mxCell id="n2" value="beta" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1A1A2E;strokeColor=#0D0D1A;" vertex="1" parent="1"><mxGeometry x="240" y="40" width="120" height="60" as="geometry" /></mxCell>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="n1" target="n2"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
