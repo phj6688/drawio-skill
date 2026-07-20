@@ -4,6 +4,27 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project aims for
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-20
+
+### Fixed
+
+- Legend edge-style check no longer counts its own line samples as content
+  styles: identical black lines (default vs explicit #000000) no longer trip a
+  blocking false positive, and a phantom legend row is now caught (was a silent
+  false negative).
+- The LOOK stage reads compressed and object/UserObject-wrapped diagrams: on
+  drawio-desktop's default (compressed) save, crop generation previously exited 2
+  and the render-and-look loop was unreachable.
+- render.sh reports a documented exit 2 (not a raw error and exit 1) when python3
+  is missing.
+
+### Testing / tooling
+
+- The fixture suite runs in both fixture-mode and default (calibration.json)
+  mode, so the char model consumers actually use is tested; the wrap-overflow
+  estimate uses the shared width model instead of a hardcoded ratio.
+- smoke.sh runs the layout pass on a temp copy, keeping the working tree clean.
+
 ## [0.3.0] - 2026-07-19
 
 ### Fixed
@@ -55,6 +76,7 @@ All notable changes to this project are documented here. Format follows
   validator, headless render with a blank guard, crop-based visual review with
   nonces, and a completion record no tool can fake.
 
+[0.4.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.4.0
 [0.3.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.3.0
 [0.2.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.2.0
 [0.1.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.1.0
