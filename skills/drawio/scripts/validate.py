@@ -879,7 +879,9 @@ def _geo_checks(name, model, cells, content, content_ids, verts_all, edges, poly
                              f"(est {wline:.0f}px > {usable:.0f}px usable)")
                 rep.region("overflow", c.bbox(), f"label overflow {c.id}")
         else:
-            per_line = max(1, int(usable // (0.55 * fs))) if fs else 1
+            # chars-per-line from the same width model as every other estimate,
+            # not a hardcoded ratio, so wrap and non-wrap agree.
+            per_line = max(1, int(usable // (model["flat"] * fs))) if fs else 1
             nlines = sum(max(1, math.ceil(len(ln) / per_line)) for ln in lines) if per_line else len(lines)
             need = nlines * fs * LINE_HEIGHT + 2 * TEXT_PAD_Y
             if need > (c.gh or 0):
@@ -1020,9 +1022,16 @@ def _legend_checks(name, cells, content, edges, rep):
             continue
         if fill:
             fills.add((norm_hex(fill), norm_hex(stroke)))
+    # Content edge styles only: exclude the legend's own line samples (an edge with a
+    # legend id, or one drawn between two legend anchor cells). Absent strokeColor is
+    # drawio's default black, so an unset stroke and an explicit #000000 are one style.
+    content_edges = [e for e in edges
+                     if not is_legend(e.id)
+                     and not (is_legend(e.source) and is_legend(e.target))]
     edge_tuples = set()
-    for e in edges:
-        edge_tuples.add((e.sd.get("dashed", "0"), norm_hex(e.sd.get("strokeColor")),
+    for e in content_edges:
+        edge_tuples.add((e.sd.get("dashed", "0"),
+                         norm_hex(e.sd.get("strokeColor")) or "#000000",
                          e.sd.get("endArrow", "classic")))
     shapes = {shape_kind(c) for c in content}
 
@@ -1050,7 +1059,8 @@ def _legend_checks(name, cells, content, edges, rep):
     legend_edge_tuples = set()
     for c in legend_cells:
         if c.is_edge:
-            legend_edge_tuples.add((c.sd.get("dashed", "0"), norm_hex(c.sd.get("strokeColor")),
+            legend_edge_tuples.add((c.sd.get("dashed", "0"),
+                                    norm_hex(c.sd.get("strokeColor")) or "#000000",
                                     c.sd.get("endArrow", "classic")))
 
     if len(fills) > 1 or swatch_fills:
@@ -1061,11 +1071,14 @@ def _legend_checks(name, cells, content, edges, rep):
                          f"(missing {sorted(map(str, missing))}, extra {sorted(map(str, extra))})")
             rep.region("legend", _legend_bbox(legend_cells), "swatch/content fill mismatch")
     if len(edge_tuples) > 1 or legend_edge_tuples:
-        if not edge_tuples.issubset(legend_edge_tuples):
-            rep.gate(25, f"[{name}] content edge styles {sorted(map(str, edge_tuples))} missing from "
+        missing = edge_tuples - legend_edge_tuples
+        if missing:
+            rep.gate(25, f"[{name}] content edge styles {sorted(map(str, missing))} missing from "
                          f"legend line samples {sorted(map(str, legend_edge_tuples))}")
-        if edge_tuples != legend_edge_tuples and (len(edge_tuples) > 1):
-            rep.gate(20, f"[{name}] legend line samples do not match content edge styles")
+        phantom = legend_edge_tuples - edge_tuples
+        if phantom:
+            rep.gate(20, f"[{name}] legend line samples {sorted(map(str, phantom))} match no content edge style")
+            rep.region("legend", _legend_bbox(legend_cells), "phantom legend line sample")
 
 
 def _legend_bbox(legend_cells):

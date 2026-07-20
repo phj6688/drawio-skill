@@ -1,6 +1,6 @@
 {
   "name": "drawio",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Verified draw.io diagram authoring: a deterministic 25-check validator, headless render with blank guard, crop-based visual review with nonces, and a completion record no tool can fake. Two-mode layout: hand grid up to 12 nodes, ELK engine placement above.",
   "author": {
     "name": "Peyman",

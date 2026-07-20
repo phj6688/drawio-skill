@@ -23,6 +23,7 @@ import xml.etree.ElementTree as ET
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 from constants import MAX_CROPS, LEGEND_ID_TOKEN
+from validate import decompress_body, reject_dangerous_xml
 
 CROP_MARGIN_PX = 40  # context gutter around each flagged region
 
@@ -39,14 +40,52 @@ def png_size(path):
     return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
 
 
+def _iter_models(src_path):
+    """Yield each page's mxGraphModel, decompressing compressed diagram bodies.
+
+    Uses the validator's loader helpers so the LOOK stage sees the same cells the
+    validator did: drawio-desktop's default save is compressed, and its raw text
+    carries no mxCell elements at all.
+    """
+    with open(src_path, encoding="utf-8") as f:
+        data = f.read()
+    reject_dangerous_xml(data)
+    root = ET.fromstring(data)
+    if root.tag.rsplit("}", 1)[-1] == "mxGraphModel":
+        yield root
+        return
+    for dia in root.findall("diagram"):
+        model = dia.find("mxGraphModel")
+        if model is None:
+            body = (dia.text or "").strip()
+            if body:
+                body_xml = decompress_body(body)
+                reject_dangerous_xml(body_xml)
+                model = ET.fromstring(body_xml)
+        if model is not None:
+            yield model
+
+
 def parse_vertices(src_path):
-    """Return [(id, style, ax, ay, w, h)] with absolute coords (container children resolved)."""
-    root = ET.parse(src_path).getroot()
+    """Return [(id, style, ax, ay, w, h)] with absolute coords (container children
+    resolved). Handles compressed bodies and object/UserObject-wrapped cells."""
     cells = {}
-    for c in root.iter("mxCell"):
-        cid = c.get("id")
-        if cid is not None:
-            cells[cid] = c
+    for model in _iter_models(src_path):
+        scope = model.find("root")
+        if scope is None:
+            scope = model
+        for c in scope.findall("mxCell"):
+            cid = c.get("id")
+            if cid is not None:
+                cells[cid] = c
+        # object/UserObject wraps a cell: the id is on the wrapper, geometry on the
+        # inner mxCell. Stamp the id onto the inner cell so it resolves like any other.
+        for obj in scope.findall("object") + scope.findall("UserObject"):
+            inner = obj.find("mxCell")
+            oid = obj.get("id")
+            if inner is not None and oid is not None:
+                inner.set("id", oid)
+                cells[oid] = inner
 
     def geom(c):
         g = c.find("mxGeometry")

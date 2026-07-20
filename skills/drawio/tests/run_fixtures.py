@@ -26,17 +26,17 @@ VALIDATE = os.path.join(HERE, "..", "scripts", "validate.py")
 FORBIDDEN = re.compile(r"PASS|VALID|✓|0 errors")
 
 
-def run_one(name):
+def run_one(name, fixture_mode=True):
     fixture = os.path.join(FIX_DIR, f"{name}.drawio")
     if not os.path.exists(fixture):
         return [f"fixture file missing: {fixture}"], "", 2
     fd, tmp = tempfile.mkstemp(suffix=".json")
     os.close(fd)
+    cmd = [sys.executable, VALIDATE, fixture, "--stage", "hand", "--json", tmp]
+    if fixture_mode:
+        cmd.append("--fixture-mode")
     try:
-        proc = subprocess.run(
-            [sys.executable, VALIDATE, fixture, "--stage", "hand",
-             "--fixture-mode", "--json", tmp],
-            capture_output=True, text=True)
+        proc = subprocess.run(cmd, capture_output=True, text=True)
         try:
             with open(tmp, encoding="utf-8") as f:
                 report = json.load(f)
@@ -52,15 +52,9 @@ def defect_regions(report):
     return [r for r in report.get("regions", []) if r.get("kind") != "quadrant"]
 
 
-def check(name, expected):
-    report, stdout, rc = run_one(name)
-    if isinstance(report, list):  # missing fixture
-        return report
-    if isinstance(report, dict) and report.get("_crash"):
-        return [f"validator crashed rc={report['rc']}: "
-                f"{(report.get('stderr') or '').strip()[:200]}"]
+def _compare(report, stdout, rc, expected, is_good, mode):
+    """Compare one run against the expected spec. mode labels which char model ran."""
     problems = []
-    is_good = name.startswith("good_")
     got_gates = set(report.get("gates_failed", []))
     got_warns = set(report.get("warnings", []))
     exp_gates = set(expected.get("gates", []))
@@ -68,34 +62,51 @@ def check(name, expected):
 
     if is_good:
         if got_gates:
-            problems.append(f"good fixture fired gates {sorted(got_gates)} (false positive)")
+            problems.append(f"[{mode}] good fixture fired gates {sorted(got_gates)} (false positive)")
         if got_warns:
-            problems.append(f"good fixture fired warnings {sorted(got_warns)} (false positive)")
+            problems.append(f"[{mode}] good fixture fired warnings {sorted(got_warns)} (false positive)")
     else:
         if got_gates != exp_gates:
-            problems.append(f"gates {sorted(got_gates)} != expected {sorted(exp_gates)}")
+            problems.append(f"[{mode}] gates {sorted(got_gates)} != expected {sorted(exp_gates)}")
         missing_w = exp_warns - got_warns
         if missing_w:
-            problems.append(f"missing expected warnings {sorted(missing_w)} (got {sorted(got_warns)})")
+            problems.append(f"[{mode}] missing expected warnings {sorted(missing_w)} (got {sorted(got_warns)})")
 
     rmin = expected.get("regions_min")
     if rmin is not None:
         n = len(defect_regions(report))
         if n < rmin:
-            problems.append(f"defect regions {n} < regions_min {rmin}")
+            problems.append(f"[{mode}] defect regions {n} < regions_min {rmin}")
 
     want_fail = bool(exp_gates)
     if want_fail and rc != 1:
-        problems.append(f"expected exit 1 on gate failure, got {rc}")
+        problems.append(f"[{mode}] expected exit 1 on gate failure, got {rc}")
     if not want_fail and not is_good and rc != 0:
-        problems.append(f"expected exit 0, got {rc}")
+        problems.append(f"[{mode}] expected exit 0, got {rc}")
     if is_good and rc != 0:
-        problems.append(f"good fixture expected exit 0, got {rc}")
+        problems.append(f"[{mode}] good fixture expected exit 0, got {rc}")
 
     if FORBIDDEN.search(stdout):
-        problems.append("report contains a forbidden done-state token (verdict inversion breach)")
+        problems.append(f"[{mode}] report contains a forbidden done-state token (verdict inversion breach)")
     if is_good and "NOT YET VERIFIED" not in stdout:
-        problems.append("good fixture missing the NOT YET VERIFIED verdict-inversion line")
+        problems.append(f"[{mode}] good fixture missing the NOT YET VERIFIED verdict-inversion line")
+    return problems
+
+
+def check(name, expected):
+    # fixture-mode pins constants; default mode reads calibration.json (what consumers
+    # actually run). Both must satisfy the spec, so the tested behavior is the shipped one.
+    is_good = name.startswith("good_")
+    problems = []
+    for mode, fm in (("fixture", True), ("default", False)):
+        report, stdout, rc = run_one(name, fixture_mode=fm)
+        if isinstance(report, list):  # missing fixture
+            return report
+        if isinstance(report, dict) and report.get("_crash"):
+            problems.append(f"[{mode}] validator crashed rc={report['rc']}: "
+                            f"{(report.get('stderr') or '').strip()[:200]}")
+            continue
+        problems += _compare(report, stdout, rc, expected, is_good, mode)
     return problems
 
 
