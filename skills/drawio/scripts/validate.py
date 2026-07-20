@@ -735,12 +735,12 @@ def run_checks(name, model, cells, page_attrs, stage, rep, raw_ids=None):
     if not geo_stage:
         return
 
-    # 22 luminance
+    # 22 luminance. Absent fill/font take drawio's rendered defaults (white fill,
+    # black text) so an imported dark-fill-with-default-text node is not invisible
+    # to the check just because it never set an explicit color.
     for c in content:
-        fill = c.sd.get("fillColor")
-        fc = c.sd.get("fontColor")
-        if not fill or not fc:
-            continue
+        fill = c.sd.get("fillColor") or "#ffffff"
+        fc = c.sd.get("fontColor") or "#000000"
         yf = luminance(fill)
         yt = luminance(fc)
         if yf is None or yt is None:
