@@ -32,18 +32,23 @@ FONT_SUB, FONT_EDGE, FONT_LEGEND = 10, 11, 11
 LINE_HEIGHT = 1.25             # [HELD] drawio default lineHeight, exact, safe to gate on
 TEXT_PAD_X, TEXT_PAD_Y = 12, 8
 
-# Character width model. Flat constants are the uncalibrated fallback; the class
-# table is the calibrated model measured on this box (see calibration in tests/).
+# Character width model. These are the pinned FIXTURE-MODE fallback: deterministic on
+# any box so the test corpus behaves identically everywhere. Default (consumer) mode
+# reads the live per-box measurements from calibration.json, which differ from these by
+# design (they are re-measured against the pinned image). run_fixtures asserts BOTH the
+# pinned fallback and calibration.json reach the same verdict on every fixture, so the
+# two models never diverge on the corpus. Re-measure with scripts/calibrate_charwidth.py.
 CHAR_W_WARN = 0.60             # [HELD] own-box overflow warning, uncalibrated fallback
 CHAR_W_GATE = 0.70             # [DERIVED] collision gate inflation: above uppercase mean advance, fails toward whitespace
 CHAR_W_SLACK_CHARS = 1         # extra char added before the gate compare
-# [MEASURED] rendered on rlespinasse/drawio-desktop-headless 2026-07-10, scale confirmed 1.00 px/unit:
-# mixed labels 0.436..0.477 * fontSize, M-run 0.815, i-run 0.208, bold = regular * 1.065.
-CHAR_CLASS_WIDE = 0.72         # [MEASURED->DERIVED] A-Z 0-9 @ # % _ and similar
-CHAR_CLASS_XWIDE = 0.85        # [MEASURED] m w M W
-CHAR_CLASS_NARROW = 0.28       # [MEASURED] i l j t f r . , : ; ' " | ( ) [ ] space
-CHAR_CLASS_BODY = 0.46         # [MEASURED] remaining lowercase
-BOLD_FACTOR = 1.065            # [MEASURED]
+# [DERIVED] conservative fixture-mode fallbacks. The live [MEASURED] values live in
+# calibration.json (2026-07-10 render, scale 1.00 px/unit): these pinned constants are
+# deliberately below those so fixture-mode is the fail-safe floor, not a second copy.
+CHAR_CLASS_WIDE = 0.72         # [DERIVED] A-Z 0-9 @ # % _ and similar
+CHAR_CLASS_XWIDE = 0.85        # [DERIVED] m w M W
+CHAR_CLASS_NARROW = 0.28       # [DERIVED] i l j t f r . , : ; ' " | ( ) [ ] space
+CHAR_CLASS_BODY = 0.46         # [DERIVED] remaining lowercase
+BOLD_FACTOR = 1.065            # [DERIVED]
 
 # ---- ELK spacing for MODE-AUTO (mirrors the hand gaps) ----
 ELK_NODE_NODE = 40
