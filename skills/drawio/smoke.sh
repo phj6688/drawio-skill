@@ -118,7 +118,8 @@ fi
 echo "step 4: calibrate_charwidth.py"
 RC=0; CAL_OUT="$(python3 "$SCR/calibrate_charwidth.py" 2>&1)" || RC=$?
 if [ "$RC" -eq 0 ] && [ -f "$SCR/calibration.json" ]; then
-  ok "$(echo "$CAL_OUT" | grep -o 'classes=.*flat_p95_mixed=[0-9.]*' | head -1)"
+  ok "$(echo "$CAL_OUT" | grep -m1 'calibrate: wrote' || echo 'calibration.json written')"
+  echo "            note: calibration.json was rewritten in place (measured product data); review git diff."
 elif [ "$RC" -eq 2 ]; then
   skip "calibrate (docker or PIL absent, exit 2)"
 else
@@ -126,7 +127,10 @@ else
 fi
 
 echo "step 5: layout_auto.py 14-node topology [$TSRC]"
-RC=0; LAY_OUT="$(python3 "$SCR/layout_auto.py" "$TOPO" --direction DOWN 2>&1)" || RC=$?
+# Copy into TMP first: layout_auto writes <stem>.auto.drawio next to its input, which
+# must never land in tests/fixtures/ (the integrity guard flags it as an orphan).
+TOPO_LAY="$TMP/$(basename "$TOPO")"; cp "$TOPO" "$TOPO_LAY"
+RC=0; LAY_OUT="$(python3 "$SCR/layout_auto.py" "$TOPO_LAY" --direction DOWN 2>&1)" || RC=$?
 if [ "$RC" -eq 0 ]; then
   ok "$(echo "$LAY_OUT" | grep -m1 'laid out via' || echo 'layout produced')"
 elif [ "$RC" -eq 2 ]; then
