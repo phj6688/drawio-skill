@@ -38,7 +38,16 @@ PNG_BASE="$(basename "$OUT_PNG")"
 SVG_BASE="$(basename "$OUT_SVG")"
 
 # Pull the pinned values; never hardcode a second copy of the numbers.
-read -r IMAGE SHM TIMEOUT_S < <(python3 -c "import sys,os; sys.path.insert(0,'$SCRIPT_DIR'); import constants as c; print(c.DOCKER_IMAGE, c.DOCKER_SHM, c.RENDER_TIMEOUT_S)")
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "render.sh: python3 not found; cannot read the pinned render constants." >&2
+  echo "python3 is a hard dependency of this skill; install it to render (exit 2)." >&2
+  exit 2
+fi
+read -r IMAGE SHM TIMEOUT_S < <(python3 -c "import sys,os; sys.path.insert(0,'$SCRIPT_DIR'); import constants as c; print(c.DOCKER_IMAGE, c.DOCKER_SHM, c.RENDER_TIMEOUT_S)") || true
+if [ -z "${IMAGE:-}" ] || [ -z "${SHM:-}" ] || [ -z "${TIMEOUT_S:-}" ]; then
+  echo "render.sh: could not read render constants from constants.py (empty value); exit 2." >&2
+  exit 2
+fi
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "STRUCTURE-ONLY DEGRADATION: docker not found."
