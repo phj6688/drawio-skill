@@ -879,7 +879,9 @@ def _geo_checks(name, model, cells, content, content_ids, verts_all, edges, poly
                              f"(est {wline:.0f}px > {usable:.0f}px usable)")
                 rep.region("overflow", c.bbox(), f"label overflow {c.id}")
         else:
-            per_line = max(1, int(usable // (0.55 * fs))) if fs else 1
+            # chars-per-line from the same width model as every other estimate,
+            # not a hardcoded ratio, so wrap and non-wrap agree.
+            per_line = max(1, int(usable // (model["flat"] * fs))) if fs else 1
             nlines = sum(max(1, math.ceil(len(ln) / per_line)) for ln in lines) if per_line else len(lines)
             need = nlines * fs * LINE_HEIGHT + 2 * TEXT_PAD_Y
             if need > (c.gh or 0):
