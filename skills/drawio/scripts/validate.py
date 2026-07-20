@@ -735,12 +735,12 @@ def run_checks(name, model, cells, page_attrs, stage, rep, raw_ids=None):
     if not geo_stage:
         return
 
-    # 22 luminance
+    # 22 luminance. Absent fill/font take drawio's rendered defaults (white fill,
+    # black text) so an imported dark-fill-with-default-text node is not invisible
+    # to the check just because it never set an explicit color.
     for c in content:
-        fill = c.sd.get("fillColor")
-        fc = c.sd.get("fontColor")
-        if not fill or not fc:
-            continue
+        fill = c.sd.get("fillColor") or "#ffffff"
+        fc = c.sd.get("fontColor") or "#000000"
         yf = luminance(fill)
         yt = luminance(fc)
         if yf is None or yt is None:
@@ -1183,11 +1183,13 @@ def main(argv=None):
         return 2
     try:
         rep = validate(args.file, args.stage, args.fixture_mode)
-    except (ET.ParseError, ValueError) as e:
-        # check 1: malformed XML or a non-mxfile/mxGraphModel root is a well-formedness gate
+    except (ET.ParseError, ValueError, zlib.error, MemoryError) as e:
+        # check 1: any input-derived fault is a bad FILE, not a broken tool -- malformed
+        # XML, a non-mxfile root, a corrupt/oversize compressed body, a rejected DTD.
+        # These belong on exit 1 (fix the file); exit 2 stays for genuine tool faults.
         print("drawio structural report")
         print("\nGATES (blocking):")
-        print(f"  [ 1] well-formed XML / valid root failed: {e}")
+        print(f"  [ 1] malformed or unsafe input file: {e}")
         print("\nGATES FAILED: 1")
         if args.json_path:
             with open(args.json_path, "w", encoding="utf-8") as f:
