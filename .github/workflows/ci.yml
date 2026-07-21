@@ -115,6 +115,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run the fixture regression suite
         run: python skills/drawio/tests/run_fixtures.py
+      - name: Exit-code contract (docker-free)
+        run: python skills/drawio/tests/contract.py
 
   shellcheck:
     name: ShellCheck
