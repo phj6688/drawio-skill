@@ -22,17 +22,17 @@ import os
 import shutil
 import subprocess
 import sys
+import xml.etree.ElementTree as _ET
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 from constants import (
-    DOCKER_IMAGE, DOCKER_SHM, RENDER_TIMEOUT_S,
+    DOCKER_IMAGE_DIGEST, DOCKER_SHM, RENDER_TIMEOUT_S,
     ELK_NODE_NODE, ELK_EDGE_NODE, ELK_LAYER_SPACING,
     ELK_BUMP_NODE_NODE, ELK_BUMP_EDGE_NODE, ELK_BUMP_LAYER,
-    ENGINE_MAX_INVOCATIONS, MODE_HAND_MAX_NODES,
+    ENGINE_MAX_INVOCATIONS, MODE_HAND_MAX_NODES, LIBAVOID_PROBE_S,
 )
-
-LIBAVOID_PROBE_S = 25  # libavoid hangs on this image; bound the one-time probe short
+from validate import reject_dangerous_xml
 
 
 def elk_json(direction, node_node, layer, edge_node):
@@ -58,7 +58,7 @@ def engine_run(in_dir, in_base, out_base, layout_arg, timeout_s):
     subprocess.run(
         ["timeout", str(timeout_s), "docker", "run", "--rm",
          f"--shm-size={DOCKER_SHM}", "-w", "/data", "-v", f"{in_dir}:/data",
-         DOCKER_IMAGE, "-x", "-f", "xml", "--layout", layout_arg,
+         DOCKER_IMAGE_DIGEST, "-x", "-f", "xml", "--layout", layout_arg,
          "-o", out_base, in_base],
         capture_output=True,
     )
@@ -128,6 +128,15 @@ def main():
         return 2
     if not shutil.which("docker"):
         print("layout_auto: docker not found; the ELK layout pass needs the pinned image")
+        return 2
+
+    try:
+        with open(args.file, encoding="utf-8") as _f:
+            _raw = _f.read()
+        reject_dangerous_xml(_raw)
+        _ET.fromstring(_raw)
+    except (ValueError, _ET.ParseError, OSError) as e:
+        print(f"layout_auto: not a readable .drawio file ({e}); nothing to lay out", file=sys.stderr)
         return 2
 
     in_path = os.path.abspath(args.file)

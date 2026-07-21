@@ -22,7 +22,7 @@ Hand-written .drawio XML fails in ways the author cannot see: valid XML, overlap
    - Order in file: containers, vertices, edges, then title and legend last (z-order is document order).
 3. **Validate:** `python3 scripts/validate.py FILE --stage hand --json report.json` (stage `post-layout` after layout_auto). Fix gates, re-run, max 3 rounds. Green output says `STRUCTURE OK - NOT YET VERIFIED`: believe it, you are not done.
 4. **Render:** `scripts/render.sh FILE`. Docker, pinned image, blank guard included. Exit 2 means no docker: fallback rules in [references/verify.md](references/verify.md).
-5. **Look:** `python3 scripts/emit_crops.py FILE FILE.png report.json`, then actually read every crop image and the full PNG. Fix what you see, re-render, max 2 rounds.
+5. **Look:** `python3 scripts/emit_crops.py FILE <basename>.png report.json`, then actually read every crop image and the full PNG. Fix what you see, re-render, max 2 rounds. (`render.sh` strips the extension, so `arch.drawio` renders to `arch.png`, not `arch.drawio.png`; `render.sh FILE [OUTBASE]` overrides the base.)
 6. **Hand over with the completed DONE-CHECK block** (skeleton comes pre-filled from emit_crops with gate results and per-crop nonces; you add only what you read in each crop). Format and rules: [references/verify.md](references/verify.md).
 
 ## Quick reference

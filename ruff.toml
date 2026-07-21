@@ -1,0 +1,6 @@
+# Correctness-adjacent lint only, no style churn: pyflakes (F), syntax errors (E9),
+# unused arguments (ARG), unused loop control variables (B007).
+target-version = "py310"
+
+[lint]
+select = ["F", "E9", "ARG", "B007"]

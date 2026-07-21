@@ -4,6 +4,30 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project aims for
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-20
+
+### Security
+
+- The docker image runs by digest, not a mutable tag, so a re-pushed upstream
+  tag cannot swap the rendered image under installers.
+
+### Fixed
+
+- layout_auto and blankguard reject unreadable/DTD input up front with a clear
+  exit 2 instead of a confusing "0 content nodes" split.
+- Same-side-pin gate-11 hits now disclose that the L-corner is synthesized (the
+  real router may route around); the gate is kept pending render evidence.
+- Doc/code drift: SKILL.md's LOOK command uses the real rendered filename, the
+  perimeter gate message matches the doctrine, and the legend recipe is on-grid.
+
+### Maintainability / tooling
+
+- Dead code removed (proven behavior-neutral by a full fixture stdout byte-diff);
+  stray tuning constants consolidated into constants.py; a pinned ruff lint gate
+  added to CI; a repo-root verify.sh gate (hermetic default, --full docker tier).
+- README gains an architecture diagram, authored and verified with the skill's
+  own render-and-look loop (docs/architecture.drawio).
+
 ## [0.4.0] - 2026-07-20
 
 ### Fixed
@@ -76,6 +100,7 @@ All notable changes to this project are documented here. Format follows
   validator, headless render with a blank guard, crop-based visual review with
   nonces, and a completion record no tool can fake.
 
+[0.5.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.5.0
 [0.4.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.4.0
 [0.3.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.3.0
 [0.2.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.2.0
