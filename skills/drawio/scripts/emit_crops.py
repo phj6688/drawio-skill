@@ -66,9 +66,19 @@ def _iter_models(src_path):
 
 def parse_vertices(src_path):
     """Return [(id, style, ax, ay, w, h)] with absolute coords (container children
-    resolved). Handles compressed bodies and object/UserObject-wrapped cells."""
+    resolved). Handles compressed bodies and object/UserObject-wrapped cells.
+
+    Only PAGE 1 is read: render.sh exports page 1, so mapping other pages' cells
+    onto that PNG would land crops on the wrong pixels. Multi-page diagrams are
+    LOOKed one page at a time.
+    """
     cells = {}
-    for model in _iter_models(src_path):
+    models = list(_iter_models(src_path))
+    if len(models) > 1:
+        print(f"emit_crops: {len(models)} pages present; cropping page 1 only "
+              f"(render.sh exports page 1). Render and LOOK other pages separately.",
+              file=sys.stderr)
+    for model in models[:1]:
         scope = model.find("root")
         if scope is None:
             scope = model
