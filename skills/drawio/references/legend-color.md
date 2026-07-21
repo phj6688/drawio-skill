@@ -20,7 +20,7 @@ Rules:
 - At most 6 semantic fills plus neutral gray per diagram. Same type = same color, everywhere. A color that does not carry meaning does not appear.
 - Every fill keeps its paired stroke. No borderless boxes.
 - Font color by fill brightness: Y = (299R + 587G + 114B) / 1000; Y above 150 takes near-black text, otherwise white. Every fill in the table above takes near-black.
-- Container backgrounds come only from the reserved neutral tints (`none`, `#FFFFFF`, `#F5F5F5`, `#FAFAFA`). A container filled with a semantic color counts as a semantic use and owes the legend a row.
+- Container backgrounds come only from the reserved neutral tints (`none`, `#FFFFFF`, `#F5F5F5`, `#FAFAFA`, `#FBF7EE`). A container filled with a semantic color counts as a semantic use and owes the legend a row.
 - Dashed borders mean external or planned, nothing else.
 - Dark mode is out of scope in v1: do not set `background` on `mxGraphModel`, keep `labelBackgroundColor=#ffffff` on labeled edges, and do not use `light-dark()` values. A dark variant is a different deliverable, not a flag.
 
@@ -35,7 +35,7 @@ The legend is validator-enforced both ways when required: every content fill and
 - One container cell whose id contains `legend`, 220 wide, `swimlane;startSize=28;html=1;fontSize=12;fontStyle=1` titled `Legend`, neutral tint fill.
 - Height = 28 + 24 per row.
 - Each color row: a 30x16 swatch rectangle child carrying the exact `fillColor`/`strokeColor` it describes, at x=10, plus a `text;html=1;align=left;fontSize=11` label child at x=50, width 160.
-- Each line-style row: a 40px horizontal edge sample (two invisible 1x1 anchor vertices inside the legend, or a styled edge between two points) carrying the exact `dashed/dashPattern/strokeColor/endArrow` it describes, plus the text label.
+- Each line-style row: a 40px horizontal edge sample (two invisible 10x10 anchor vertices inside the legend, on-grid so they do not trip the off-grid warning, or a styled edge between two points) carrying the exact `dashed/dashPattern/strokeColor/endArrow` it describes, plus the text label.
 - Row pitch 24. Children use container-relative coordinates.
 
 ```xml

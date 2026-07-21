@@ -631,7 +631,7 @@ def run_checks(name, model, cells, page_attrs, stage, rep, raw_ids=None):
 
     # 5 exclusivity + geometry sanity + perimeter
     perim_needs = {"rhombus": "rhombusPerimeter", "triangle": "trianglePerimeter",
-                   "hexagon": "hexagonPerimeter", "parallelogram": "parallelogramPerimeter"}
+                   "hexagon": "hexagonPerimeter2", "parallelogram": "parallelogramPerimeter"}
     for c in cells.values():
         if c.is_vertex and c.is_edge:
             rep.gate(5, f"[{name}] cell {c.id} declares both vertex and edge")
