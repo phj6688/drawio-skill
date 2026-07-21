@@ -4,6 +4,20 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project aims for
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-20
+
+### Added
+
+- Report JSON schema v1: `gate_details`/`warning_details` (message text), a
+  `geometry` block, and `meta`; `gates_failed`/`warnings` stay flat int arrays.
+  emit_crops consumes the geometry so the DONE-CHECK matches the validator.
+- References: a full 25-check registry (references/checks.md) and a degraded-modes
+  / edit-existing note (references/verify.md).
+- A README consumer contract (exit codes, JSON schema, calibration, SemVer) plus a
+  docker-free exit-code contract test wired into CI.
+- CI release-consistency gate: plugin.json version must have a CHANGELOG entry and
+  match a pushed tag. Post-layout downgrade path now has fixture coverage.
+
 ## [0.5.0] - 2026-07-20
 
 ### Security
@@ -100,6 +114,7 @@ All notable changes to this project are documented here. Format follows
   validator, headless render with a blank guard, crop-based visual review with
   nonces, and a completion record no tool can fake.
 
+[0.6.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.6.0
 [0.5.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.5.0
 [0.4.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.4.0
 [0.3.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.3.0
