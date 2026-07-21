@@ -81,3 +81,22 @@ When one of these sentences forms, stop and do the thing on the right.
 | "This diagram is too simple to need the loop." | The 4-node calibration fixture took two render rounds to get right. Simple is not immune. |
 | "I'll fill the DONE-CHECK from memory." | Lines without nonces are malformed. The nonces exist so this shortcut visibly fails. |
 | "The user is waiting, skip the crops this once." | The user is waiting for a diagram that is right. One crop round costs a minute; a shipped overlap costs the redo plus trust. |
+
+## Degraded modes and editing an existing diagram
+
+The loop stays honest when something is missing; it never fakes a step.
+
+- **Compressed input (drawio-desktop's default save).** `validate.py`, `render.sh`,
+  and `emit_crops.py` all read compressed `.drawio` bodies, so the full loop works
+  on a file saved from the desktop app. (Older builds exited 2 at the LOOK stage on
+  these; that is fixed.)
+- **Multi-page files.** A diagram with more than 25 nodes is split across linked
+  pages. Render and validate one page at a time.
+- **PIL absent.** `emit_crops.py` cannot cut crop images without Pillow; it writes
+  `crops.txt` with the pixel rectangles instead and says so. LOOK the full PNG at
+  those rectangles.
+- **Docker exit codes.** `render.sh` exits `2` when docker (or python3) is absent
+  (structure-only, degradation stated) and `3` when the render is blank or
+  degenerate (a real failure to fix, never "passed"). See the fallback ladder above.
+- **Hostile or corrupt input.** A malformed file, a rejected DTD, or a decompression
+  bomb exits `1` (a bad file), not `2` (a broken tool).

@@ -157,10 +157,36 @@ jobs:
           npx --yes markdownlint-cli2 "**/*.md" "#node_modules" || \
             echo "::warning::markdownlint reported style issues (non-blocking)."
 
+  release-consistency:
+    name: Release consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: plugin.json version has a CHANGELOG entry (and matches a pushed tag)
+        run: |
+          python - <<'PY'
+          import json, os, re, sys
+          version = json.load(open('.claude-plugin/plugin.json', encoding='utf-8'))['version']
+          changelog = open('CHANGELOG.md', encoding='utf-8').read()
+          if not re.search(rf'^## \[{re.escape(version)}\]', changelog, re.M):
+              print(f"::error::CHANGELOG.md has no entry for plugin.json version {version}")
+              sys.exit(1)
+          print(f"OK: CHANGELOG documents {version}")
+          ref = os.environ.get('GITHUB_REF', '')
+          if ref.startswith('refs/tags/'):
+              tag = ref.split('/', 2)[2]
+              if tag != f"v{version}":
+                  print(f"::error::tag {tag} != v{version} (plugin.json)")
+                  sys.exit(1)
+              print(f"OK: tag {tag} matches plugin.json")
+          PY
+
   ci-passed:
     name: CI passed
     if: always()
-    needs: [validate-skill, fixtures, shellcheck, markdownlint]
+    needs: [validate-skill, fixtures, shellcheck, markdownlint, release-consistency]
     runs-on: ubuntu-latest
     steps:
       - name: Require every job to pass
