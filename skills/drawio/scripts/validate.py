@@ -33,10 +33,8 @@ from constants import (
     DENSITY_GATE, DENSITY_WARN, ASPECT_WARN_HI, ASPECT_WARN_LO, UTIL_WARN_LO,
     FANOUT_LANE_AT, EDGES_PER_SIDE_WARN, LUMINANCE_DARK_TEXT,
     crossing_warn_threshold, LEGEND_ID_TOKEN, CONTAINER_TINT_FILLS,
-    MAX_DECOMPRESSED_BYTES,
+    MAX_DECOMPRESSED_BYTES, NEAR_MISS_FACTOR,
 )
-
-NEAR_MISS_FACTOR = 2  # a clearance-band multiple counts as a near-miss region
 
 
 # ---- calibration ----------------------------------------------------------
@@ -292,7 +290,6 @@ def _geom_offset(el, key):
     g = el.find("mxGeometry")
     if g is None:
         return None
-    pt = g.find("mxPoint")
     for p in g.findall("mxPoint"):
         if p.get("as") == key:
             return float(p.get("x", 0)), float(p.get("y", 0))
@@ -578,7 +575,6 @@ def external_node_label(c, model):
     if not lines:
         return None
     w, h = label_box(lines, font_of(c, FONT_NODE), is_bold(c), model, "gate")
-    bx, by = c.ax, c.ay
     if lp == "right":
         x = c.ax + (c.gw or 0)
         y = c.ay + (c.gh or 0) / 2 - h / 2
@@ -657,7 +653,6 @@ def run_checks(name, model, cells, page_attrs, stage, rep, raw_ids=None):
     verts_all = [c for c in cells.values() if c.is_vertex and c.gx is not None
                  and c.gy is not None and c.gw and c.gh and c.gw > 0 and c.gh > 0]
     content = content_vertices(cells)
-    content_ids = {c.id for c in content}
 
     # 15 zero-length edges, stacked vertices, orphans (full stage only)
     if geo_stage:
@@ -719,7 +714,7 @@ def run_checks(name, model, cells, page_attrs, stage, rep, raw_ids=None):
                 rep.unpinned += 1
 
     if geo_stage:
-        _geo_checks(name, model, cells, content, content_ids, verts_all, edges, polys, rep, stage)
+        _geo_checks(name, model, cells, content, verts_all, edges, polys, rep, stage)
 
     # 16 density (full stage only)
     if geo_stage:
@@ -760,7 +755,7 @@ def run_checks(name, model, cells, page_attrs, stage, rep, raw_ids=None):
         if e.id in polys and not polys[e.id][1] and (e.value or "").strip():
             rep.meta.append(f"[{name}] edge {e.id} is labeled but not pinned (doctrine wants pinned edges)")
     for c in content:
-        if e_pinned_degree(c.id, edges, polys) >= 2 and any(
+        if _incident_degree(c.id, edges) >= 2 and any(
                 e.id in polys and not polys[e.id][1]
                 for e in edges if c.id in (e.source, e.target)):
             rep.meta.append(f"[{name}] node {c.id} has degree>=2 with unpinned edges")
@@ -770,11 +765,11 @@ def run_checks(name, model, cells, page_attrs, stage, rep, raw_ids=None):
             rep.warn(24, f"[{name}] content node {c.id} is disconnected (degree 0)")
 
 
-def e_pinned_degree(cid, edges, polys):
+def _incident_degree(cid, edges):
     return sum(1 for e in edges if cid in (e.source, e.target))
 
 
-def _geo_checks(name, model, cells, content, content_ids, verts_all, edges, polys, rep, stage):
+def _geo_checks(name, model, cells, content, verts_all, edges, polys, rep, stage):
     # 8 sibling AABB overlap (legend furniture participates)
     by_parent = {}
     for c in verts_all:
@@ -889,8 +884,6 @@ def _geo_checks(name, model, cells, content, content_ids, verts_all, edges, poly
                 rep.region("overflow", c.bbox(), f"wrapped overflow {c.id}")
 
     # 11 edge-through-node
-    exact_hits = 0
-    approx_hits = 0
     for e in edges:
         if e.id not in polys:
             continue
@@ -908,7 +901,6 @@ def _geo_checks(name, model, cells, content, content_ids, verts_all, edges, poly
                 if exact and not engine_geom:
                     rep.gate(11, f"[{name}] pinned edge {e.id} passes through node {v.id}")
                     rep.region("edge-through-node", v.bbox(), f"edge {e.id} through {v.id}")
-                    exact_hits += 1
                     if not e.waypoints and _same_side_pin(e):
                         rep.meta.append(f"[{name}] edge {e.id} is a same-side pin; its L-corner is "
                                         f"synthesized and a real router may route around {v.id} - LOOK")
@@ -916,7 +908,6 @@ def _geo_checks(name, model, cells, content, content_ids, verts_all, edges, poly
                     why = "engine-routed" if engine_geom else "approx"
                     rep.warn(11, f"[{name}] {why} edge {e.id} may pass through node {v.id} (LOOK)")
                     rep.region("edge-through-node", v.bbox(), f"{why} edge {e.id} near {v.id}")
-                    approx_hits += 1
     mode_note = "engine geometry: edge-path checks warn and defer to LOOK" if engine_geom else \
                 f"exact for {rep.pinned} pinned edges, approximate for {rep.unpinned} un-pinned (LOOK required)"
     rep.meta.append(f"[{name}] edge-through-node: {mode_note}")
@@ -948,7 +939,7 @@ def _geo_checks(name, model, cells, content, content_ids, verts_all, edges, poly
             continue
         cc = center(cells[cid])
         angles = []
-        for e, other in lst:
+        for _e, other in lst:
             oc = cells.get(other)
             if oc is None or oc.ax is None:
                 continue
@@ -1118,7 +1109,6 @@ def validate(path, stage, fixture_mode):
             rep.gate(1, f"[{name}] mxGraphModel has no <root>")
             continue
         cells = {}
-        order = []
         raw_ids = []
         for el in root.findall("mxCell"):
             c = Cell(el)
@@ -1127,7 +1117,6 @@ def validate(path, stage, fixture_mode):
                 continue
             raw_ids.append(c.id)
             cells[c.id] = c
-            order.append(c)
         for obj in root.findall("object") + root.findall("UserObject"):
             inner = obj.find("mxCell")
             if inner is not None:

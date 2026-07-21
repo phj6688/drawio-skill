@@ -30,11 +30,9 @@ from constants import (
     DOCKER_IMAGE, DOCKER_SHM, RENDER_TIMEOUT_S,
     ELK_NODE_NODE, ELK_EDGE_NODE, ELK_LAYER_SPACING,
     ELK_BUMP_NODE_NODE, ELK_BUMP_EDGE_NODE, ELK_BUMP_LAYER,
-    ENGINE_MAX_INVOCATIONS, MODE_HAND_MAX_NODES,
+    ENGINE_MAX_INVOCATIONS, MODE_HAND_MAX_NODES, LIBAVOID_PROBE_S,
 )
 from validate import reject_dangerous_xml
-
-LIBAVOID_PROBE_S = 25  # libavoid hangs on this image; bound the one-time probe short
 
 
 def elk_json(direction, node_node, layer, edge_node):
