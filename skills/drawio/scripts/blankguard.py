@@ -21,6 +21,7 @@ from constants import (
     PIXEL_STDEV_MIN,
     DISTINCT_COLORS_MIN,
 )
+from validate import reject_dangerous_xml
 
 # SVG marks that carry visible geometry. div/foreignObject/switch are html-label
 # scaffolding, not marks; <image> is drawio's label fallback and counts as content.
@@ -64,7 +65,10 @@ def source_cell_counts(src_path):
     driver re-emits -f xml uncompressed, so a compressed body here means the
     wrong file was passed.
     """
-    root = ET.parse(src_path).getroot()
+    with open(src_path, encoding="utf-8") as f:
+        raw = f.read()
+    reject_dangerous_xml(raw)
+    root = ET.fromstring(raw)
     verts = edges = 0
     for c in root.iter("mxCell"):
         if c.get("vertex") == "1":
