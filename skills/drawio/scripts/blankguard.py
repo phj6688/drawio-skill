@@ -69,8 +69,15 @@ def source_cell_counts(src_path):
         raw = f.read()
     reject_dangerous_xml(raw)
     root = ET.fromstring(raw)
+    # render.sh exports page 1, so count only page 1's cells; a multi-page source
+    # otherwise inflates the drawable floor and reports a false blank.
+    if root.tag.rsplit("}", 1)[-1] == "mxfile":
+        page = root.find("diagram")
+        scope = page if page is not None else root
+    else:
+        scope = root
     verts = edges = 0
-    for c in root.iter("mxCell"):
+    for c in scope.iter("mxCell"):
         if c.get("vertex") == "1":
             verts += 1
         elif c.get("edge") == "1":
