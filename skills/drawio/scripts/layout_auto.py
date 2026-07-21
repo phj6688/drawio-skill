@@ -22,6 +22,7 @@ import os
 import shutil
 import subprocess
 import sys
+import xml.etree.ElementTree as _ET
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
@@ -31,6 +32,7 @@ from constants import (
     ELK_BUMP_NODE_NODE, ELK_BUMP_EDGE_NODE, ELK_BUMP_LAYER,
     ENGINE_MAX_INVOCATIONS, MODE_HAND_MAX_NODES,
 )
+from validate import reject_dangerous_xml
 
 LIBAVOID_PROBE_S = 25  # libavoid hangs on this image; bound the one-time probe short
 
@@ -128,6 +130,15 @@ def main():
         return 2
     if not shutil.which("docker"):
         print("layout_auto: docker not found; the ELK layout pass needs the pinned image")
+        return 2
+
+    try:
+        with open(args.file, encoding="utf-8") as _f:
+            _raw = _f.read()
+        reject_dangerous_xml(_raw)
+        _ET.fromstring(_raw)
+    except (ValueError, _ET.ParseError, OSError) as e:
+        print(f"layout_auto: not a readable .drawio file ({e}); nothing to lay out", file=sys.stderr)
         return 2
 
     in_path = os.path.abspath(args.file)
