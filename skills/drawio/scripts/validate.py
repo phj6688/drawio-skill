@@ -909,6 +909,9 @@ def _geo_checks(name, model, cells, content, content_ids, verts_all, edges, poly
                     rep.gate(11, f"[{name}] pinned edge {e.id} passes through node {v.id}")
                     rep.region("edge-through-node", v.bbox(), f"edge {e.id} through {v.id}")
                     exact_hits += 1
+                    if not e.waypoints and _same_side_pin(e):
+                        rep.meta.append(f"[{name}] edge {e.id} is a same-side pin; its L-corner is "
+                                        f"synthesized and a real router may route around {v.id} - LOOK")
                 else:
                     why = "engine-routed" if engine_geom else "approx"
                     rep.warn(11, f"[{name}] {why} edge {e.id} may pass through node {v.id} (LOOK)")
@@ -990,6 +993,18 @@ def _geo_checks(name, model, cells, content, content_ids, verts_all, edges, poly
         rep.warn(19, f"[{name}] quadrant imbalance {quad} (an empty quadrant with a crowded one)")
     for qi, (qx, qy) in enumerate([(x0, y0), (mx, y0), (x0, my), (mx, my)]):
         rep.region("quadrant", (qx, qy, w / 2, h / 2), f"quadrant {qi} count={quad[qi]}")
+
+
+def _same_side_pin(c):
+    """True when a pinned edge exits and enters on the same box side. Its L-corner is
+    synthesized (no waypoints), so a gate-11 hit may be an artifact the real router avoids."""
+    if not all(k in c.sd for k in ("exitX", "exitY", "entryX", "entryY")):
+        return False
+    try:
+        return _side(float(c.sd["exitX"]), float(c.sd["exitY"])) == \
+               _side(float(c.sd["entryX"]), float(c.sd["entryY"]))
+    except ValueError:
+        return False
 
 
 def _side(fx, fy):
