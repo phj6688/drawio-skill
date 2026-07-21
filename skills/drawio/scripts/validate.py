@@ -373,6 +373,7 @@ class Report:
         self.warnings = {}   # number -> list[str]
         self.meta = []       # list[str]
         self.regions = []    # list[dict]
+        self.geometry = None  # {aspect, util, quadrants, content_bbox} once computed
         self.pinned = 0
         self.unpinned = 0
 
@@ -980,6 +981,9 @@ def _geo_checks(name, model, cells, content, verts_all, edges, polys, rep, stage
         cx, cy = center(c)
         idx = (0 if cx < mx else 1) + (0 if cy < my else 2)
         quad[idx] += 1
+    rep.geometry = {"aspect": round(aspect, 2), "util": round(util, 3),
+                    "quadrants": list(quad),
+                    "content_bbox": [round(v, 1) for v in (x0, y0, w, h)]}
     if min(quad) == 0 and max(quad) >= 2:
         rep.warn(19, f"[{name}] quadrant imbalance {quad} (an empty quadrant with a crowded one)")
     for qi, (qx, qy) in enumerate([(x0, y0), (mx, y0), (x0, my), (mx, my)]):
@@ -1175,10 +1179,19 @@ def print_report(rep, stage):
 
 
 def build_json(rep):
+    # gates_failed / warnings stay flat int arrays (downstream int-parses them);
+    # message text and geometry are additive so machine consumers stop re-deriving.
     return {
+        "schema": 1,
         "stage": rep.stage,
         "gates_failed": sorted(rep.gates),
         "warnings": sorted(rep.warnings),
+        "gate_details": [{"check": n, "message": m}
+                         for n in sorted(rep.gates) for m in rep.gates[n]],
+        "warning_details": [{"check": n, "message": m}
+                            for n in sorted(rep.warnings) for m in rep.warnings[n]],
+        "meta": list(rep.meta),
+        "geometry": rep.geometry,
         "regions": rep.regions,
         "counts": {"pinned": rep.pinned, "unpinned": rep.unpinned},
         "verdict": "gates-failed" if rep.gates else "structure-ok-not-verified",
@@ -1209,10 +1222,10 @@ def main(argv=None):
         print(f"  [ 1] malformed or unsafe input file: {e}")
         print("\nGATES FAILED: 1")
         if args.json_path:
+            rep1 = Report(args.stage)
+            rep1.gate(1, f"malformed or unsafe input file: {e}")
             with open(args.json_path, "w", encoding="utf-8") as f:
-                json.dump({"stage": args.stage, "gates_failed": [1], "warnings": [],
-                           "regions": [], "counts": {"pinned": 0, "unpinned": 0},
-                           "verdict": "gates-failed"}, f, indent=2)
+                json.dump(build_json(rep1), f, indent=2)  # single schema writer
         return 1
     except Exception as e:  # unexpected internal fault, distinct from a diagram defect
         print(f"validate: internal error analyzing file: {e}", file=sys.stderr)
