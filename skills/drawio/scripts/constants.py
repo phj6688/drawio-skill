@@ -116,7 +116,11 @@ USER_LOOP_ROUNDS = 5
 MAX_CROPS = 12
 
 # ---- Render / blank guard ----
-DOCKER_IMAGE = "rlespinasse/drawio-desktop-headless:v1.62.0"  # [HELD] pin the version, arg parsing regresses across releases (registry tags carry the 'v' prefix; bare '1.62.0' is manifest-unknown)
+DOCKER_IMAGE = "rlespinasse/drawio-desktop-headless:v1.62.0"  # [HELD] human-readable tag; arg parsing regresses across releases (registry tags carry the 'v' prefix; bare '1.62.0' is manifest-unknown)
+# [HELD] Digest of v1.62.0; the scripts run THIS so a re-pushed tag cannot swap the
+# image under installers. Re-pin (docker inspect --format '{{index .RepoDigests 0}}')
+# only with an intentional version bump; the tag above records which version it is.
+DOCKER_IMAGE_DIGEST = "rlespinasse/drawio-desktop-headless@sha256:796cf48fd0730a9a345de83a5141402a26ef7be63026a2f84ee899f8215052d4"
 DOCKER_SHM = "1g"              # [MEASURED] renderer crashes on this box without it
 RENDER_TIMEOUT_S = 120         # [HELD] CLI export hangs are a real bug; kill and report
 PNG_MIN_BYTES = 2048           # [VERIFY]

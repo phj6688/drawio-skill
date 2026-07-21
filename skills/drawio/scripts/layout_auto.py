@@ -27,7 +27,7 @@ import xml.etree.ElementTree as _ET
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 from constants import (
-    DOCKER_IMAGE, DOCKER_SHM, RENDER_TIMEOUT_S,
+    DOCKER_IMAGE_DIGEST, DOCKER_SHM, RENDER_TIMEOUT_S,
     ELK_NODE_NODE, ELK_EDGE_NODE, ELK_LAYER_SPACING,
     ELK_BUMP_NODE_NODE, ELK_BUMP_EDGE_NODE, ELK_BUMP_LAYER,
     ENGINE_MAX_INVOCATIONS, MODE_HAND_MAX_NODES, LIBAVOID_PROBE_S,
@@ -58,7 +58,7 @@ def engine_run(in_dir, in_base, out_base, layout_arg, timeout_s):
     subprocess.run(
         ["timeout", str(timeout_s), "docker", "run", "--rm",
          f"--shm-size={DOCKER_SHM}", "-w", "/data", "-v", f"{in_dir}:/data",
-         DOCKER_IMAGE, "-x", "-f", "xml", "--layout", layout_arg,
+         DOCKER_IMAGE_DIGEST, "-x", "-f", "xml", "--layout", layout_arg,
          "-o", out_base, in_base],
         capture_output=True,
     )

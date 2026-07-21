@@ -43,8 +43,10 @@ if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 is a hard dependency of this skill; install it to render (exit 2)." >&2
   exit 2
 fi
-read -r IMAGE SHM TIMEOUT_S < <(python3 -c "import sys,os; sys.path.insert(0,'$SCRIPT_DIR'); import constants as c; print(c.DOCKER_IMAGE, c.DOCKER_SHM, c.RENDER_TIMEOUT_S)") || true
-if [ -z "${IMAGE:-}" ] || [ -z "${SHM:-}" ] || [ -z "${TIMEOUT_S:-}" ]; then
+# IMAGE is the digest-pinned reference the container actually runs; TAG is the
+# human-readable version for messages.
+read -r IMAGE TAG SHM TIMEOUT_S < <(python3 -c "import sys,os; sys.path.insert(0,'$SCRIPT_DIR'); import constants as c; print(c.DOCKER_IMAGE_DIGEST, c.DOCKER_IMAGE, c.DOCKER_SHM, c.RENDER_TIMEOUT_S)") || true
+if [ -z "${IMAGE:-}" ] || [ -z "${TAG:-}" ] || [ -z "${SHM:-}" ] || [ -z "${TIMEOUT_S:-}" ]; then
   echo "render.sh: could not read render constants from constants.py (empty value); exit 2." >&2
   exit 2
 fi
@@ -54,7 +56,7 @@ if ! command -v docker >/dev/null 2>&1; then
   echo "No PNG/SVG was produced, so the render+LOOK verification tier did not run."
   echo "validate.py structural gates are the ONLY signal; overlaps, clipped labels,"
   echo "and edge-through-node defects that need a rendered LOOK stay UNVERIFIED."
-  echo "Install docker (image: ${IMAGE}) to render, or accept structure-only."
+  echo "Install docker (image: ${TAG}) to render, or accept structure-only."
   if command -v npx >/dev/null 2>&1 && npx --no-install playwright --version >/dev/null 2>&1; then
     echo "note: a Playwright fallback renderer is NOT implemented in v1 (no fake fallback)."
   fi
