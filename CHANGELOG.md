@@ -4,6 +4,13 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project aims for
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-07-20
+
+### Fixed
+
+- emit_crops crops page 1 of a multi-page diagram (matching render.sh's page-1
+  export) instead of merging all pages, so crops land on the right pixels.
+
 ## [0.6.0] - 2026-07-20
 
 ### Added
@@ -114,6 +121,7 @@ All notable changes to this project are documented here. Format follows
   validator, headless render with a blank guard, crop-based visual review with
   nonces, and a completion record no tool can fake.
 
+[0.6.1]: https://github.com/phj6688/drawio-skill/releases/tag/v0.6.1
 [0.6.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.6.0
 [0.5.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.5.0
 [0.4.0]: https://github.com/phj6688/drawio-skill/releases/tag/v0.4.0
