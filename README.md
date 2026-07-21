@@ -61,6 +61,37 @@ the DONE-CHECK.
   labeled structure-only.
 - Python 3.10+. Pillow is optional (crops fall back to coordinate listings without it).
 
+## Consumer contract
+
+The scripts are a scriptable surface. This is the stable part; the rest may change.
+
+**Exit codes**
+
+- `validate.py`: `0` no gates (structure ok, not yet verified), `1` gates fired or the
+  input file is bad/malicious, `2` tool/environment fault (file not found, internal error).
+- `render.sh`: `0` rendered, `2` docker or python3 absent (structure-only degradation),
+  `3` blank or degenerate render (a real failure).
+- `layout_auto.py`: `0` laid out, `1` structural authoring error, `2` no docker / unreadable
+  input, `4` C4-split required.
+- `blankguard.py`: `0` real render, `1` blank/degenerate.
+- `emit_crops.py`: `0` crops written, `2` missing or unusable input.
+
+**Report JSON** (`validate.py --json`) is additive-only across a `schema` version.
+`gates_failed` and `warnings` are flat integer arrays (see
+[references/checks.md](skills/drawio/references/checks.md) to decode them);
+`gate_details`/`warning_details` carry the message text, but the message strings
+themselves are not a contract. `geometry` (aspect/util/quadrants) is provided so tools
+need not re-derive it.
+
+**Calibration.** `--fixture-mode` pins the character-width constants so the test corpus is
+deterministic on any box; default mode reads `scripts/calibration.json` (this repo's
+measurements against the pinned image). Re-measure with `scripts/calibrate_charwidth.py`.
+`run_fixtures.py` asserts both modes agree on every fixture.
+
+**Versioning.** Patch = behavior-neutral; minor = an additive check or JSON field (with
+expected-JSON updates in the same change); major = any change to an existing fixture's gate
+set. The exit-code contract above is verified by `tests/contract.py`.
+
 ## Layout of this repo
 
 ```
