@@ -26,13 +26,13 @@ VALIDATE = os.path.join(HERE, "..", "scripts", "validate.py")
 FORBIDDEN = re.compile(r"PASS|VALID|✓|0 errors")
 
 
-def run_one(name, fixture_mode=True):
+def run_one(name, fixture_mode=True, stage="hand"):
     fixture = os.path.join(FIX_DIR, f"{name}.drawio")
     if not os.path.exists(fixture):
         return [f"fixture file missing: {fixture}"], "", 2
     fd, tmp = tempfile.mkstemp(suffix=".json")
     os.close(fd)
-    cmd = [sys.executable, VALIDATE, fixture, "--stage", "hand", "--json", tmp]
+    cmd = [sys.executable, VALIDATE, fixture, "--stage", stage, "--json", tmp]
     if fixture_mode:
         cmd.append("--fixture-mode")
     try:
@@ -97,9 +97,10 @@ def check(name, expected):
     # fixture-mode pins constants; default mode reads calibration.json (what consumers
     # actually run). Both must satisfy the spec, so the tested behavior is the shipped one.
     is_good = name.startswith("good_")
+    stage = expected.get("stage", "hand")
     problems = []
     for mode, fm in (("fixture", True), ("default", False)):
-        report, stdout, rc = run_one(name, fixture_mode=fm)
+        report, stdout, rc = run_one(name, fixture_mode=fm, stage=stage)
         if isinstance(report, list):  # missing fixture
             return report
         if isinstance(report, dict) and report.get("_crash"):

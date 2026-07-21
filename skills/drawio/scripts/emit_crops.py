@@ -286,7 +286,13 @@ def _print_skeleton(report, crops, verts, degraded):
     n_pin, m_un = counts.get("pinned", 0), counts.get("unpinned", 0)
     failed = failed_gate_set(report)
     green = report.get("verdict") == "structure-ok-not-verified" and not failed
-    aspect, util, quad = geometry_summary(verts)
+    # Prefer the validator's own geometry (same content definition as checks 17/18/19);
+    # fall back to a local derivation only for legacy reports without the block.
+    geom = report.get("geometry")
+    if geom:
+        aspect, util, quad = geom["aspect"], geom["util"], geom["quadrants"]
+    else:
+        aspect, util, quad = geometry_summary(verts)
 
     if green:
         gates_line = (f"validate.py --stage {stage}: all gates green "
