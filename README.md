@@ -8,6 +8,16 @@ handover. This skill fixes the workflow, not just the rules. Its spine is a rend
 the layout doctrine exists so the first render is nearly right, and no tool in the chain ever
 prints a done-state.
 
+## Architecture
+
+![drawio-skill architecture: the render-and-look pipeline](docs/architecture.png)
+
+The diagram above was authored, validated, rendered, and looked at with this skill's own
+toolchain (source: [docs/architecture.drawio](docs/architecture.drawio)). Author `.drawio` XML,
+`validate.py` gates the structure (using `constants.py`; `layout_auto.py` places 13-25 node
+topologies via ELK), `render.sh` produces the PNG/SVG that `blankguard.py` checks, `emit_crops.py`
+cuts the review crops, and only a fully cited DONE-CHECK closes the job.
+
 ## What it does
 
 - **Two-mode layout.** Up to 12 nodes: deterministic grid placement by formula. 13 to 25: topology
