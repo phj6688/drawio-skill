@@ -102,6 +102,13 @@ PALETTE = {
 # so a decompression bomb aborts instead of exhausting RAM.
 MAX_DECOMPRESSED_BYTES = 32 * 1024 * 1024
 
+# ---- Tuning constants consumed by individual scripts (kept here so the quick-ref
+# promise "all numbers live in constants.py" holds) ----
+NEAR_MISS_FACTOR = 2           # [DERIVED] clearance-band multiple that counts as a near-miss (validate.py)
+CROP_MARGIN_PX = 40            # [DERIVED] context gutter around each flagged crop region (emit_crops.py)
+LIBAVOID_PROBE_S = 25          # [MEASURED] libavoid hangs on the pinned image; bound the one-time probe (layout_auto.py)
+ABS_FLOOR = 3                  # [DERIVED] a non-degenerate diagram always renders more than this many marks (blankguard.py)
+
 # ---- Loop caps ----
 VALIDATOR_FIX_ROUNDS = 3
 VISION_ROUNDS = 2

@@ -22,10 +22,8 @@ import xml.etree.ElementTree as ET
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
-from constants import MAX_CROPS, LEGEND_ID_TOKEN
+from constants import MAX_CROPS, LEGEND_ID_TOKEN, CROP_MARGIN_PX
 from validate import decompress_body, reject_dangerous_xml
-
-CROP_MARGIN_PX = 40  # context gutter around each flagged region
 
 # Region kinds that mark a defect worth a dedicated crop, in priority order.
 HIT_KINDS = ("label-collision", "edge-through-node", "overflow")
@@ -310,7 +308,7 @@ def _print_skeleton(report, crops, verts, degraded):
         or "no legend crop; confirm from the full PNG if a legend is required"
 
     print(f"DONE-CHECK (tier: RENDER+LOOK){degraded}")
-    print(f"  render tier ran:      docker")
+    print("  render tier ran:      docker")
     print(f"  structural gates:     {gates_line}")
     print(f"  edge-labels legible:  {label_ref}")
     print(f"  no edge-through-node: {etn_status}; {etn_ref}")

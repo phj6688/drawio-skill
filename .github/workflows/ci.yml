@@ -32,6 +32,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install PyYAML
         run: python -m pip install --quiet pyyaml
+      - name: Ruff (correctness lint)
+        run: |
+          python -m pip install --quiet ruff==0.15.10
+          ruff check .
       - name: SKILL.md frontmatter has name + description
         run: |
           python - <<'PY'

@@ -20,13 +20,13 @@ from constants import (
     PNG_MIN_BYTES,
     PIXEL_STDEV_MIN,
     DISTINCT_COLORS_MIN,
+    ABS_FLOOR,
 )
 from validate import reject_dangerous_xml
 
 # SVG marks that carry visible geometry. div/foreignObject/switch are html-label
 # scaffolding, not marks; <image> is drawio's label fallback and counts as content.
 DRAWABLE_TAGS = {"path", "rect", "ellipse", "circle", "polygon", "image", "text"}
-ABS_FLOOR = 3  # a non-degenerate diagram always renders more than this
 
 
 def _local(tag):
