@@ -22,7 +22,7 @@ import tempfile
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
-from constants import DOCKER_IMAGE, DOCKER_SHM, RENDER_TIMEOUT_S
+from constants import DOCKER_IMAGE, DOCKER_IMAGE_DIGEST, DOCKER_SHM, RENDER_TIMEOUT_S
 
 REF_X, REF_Y, REF_W, REF_H = 40, 40, 400, 20
 ROW_X, ROW_Y0, ROW_DY, ROW_H = 40, 100, 60, 30
@@ -87,7 +87,7 @@ def render(drawio_path, png_path):
     subprocess.run(
         ["timeout", str(RENDER_TIMEOUT_S), "docker", "run", "--rm",
          f"--shm-size={DOCKER_SHM}", "-w", "/data", "-v", f"{work}:/data",
-         DOCKER_IMAGE, "-x", "-f", "png", "-s", "1",
+         DOCKER_IMAGE_DIGEST, "-x", "-f", "png", "-s", "1",
          "-o", os.path.basename(png_path), os.path.basename(drawio_path)],
         capture_output=True,  # docker exit code is unreliable; the file check decides
     )
