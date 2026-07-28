@@ -1,7 +1,7 @@
 {
   "name": "drawio",
-  "version": "0.6.2",
-  "description": "Verified draw.io diagram authoring: a deterministic 25-check validator, headless render with blank guard, crop-based visual review with nonces, and a completion record no tool can fake. Two-mode layout: hand grid up to 12 nodes, ELK engine placement above.",
+  "version": "0.7.0",
+  "description": "Verified draw.io diagram authoring plus interactive explainers: a deterministic 25-check validator, headless render with blank guard, crop-based visual review with nonces, and a completion record no tool can fake. Two-mode layout: hand grid up to 12 nodes, ELK engine placement above. `explain` turns a diagram suite into one self-contained HTML page with a clickable, verified hotspot on every box.",
   "author": {
     "name": "Peyman",
     "email": "peyman.h.j@gmail.com"
@@ -9,6 +9,18 @@
   "repository": "https://github.com/phj6688/drawio-skill",
   "license": "MIT",
   "homepage": "https://github.com/phj6688/drawio-skill",
-  "keywords": ["drawio", "diagrams", "mxgraph", "architecture-diagrams", "flowchart", "validation", "claude-code", "skill"],
+  "keywords": [
+    "drawio",
+    "diagrams",
+    "mxgraph",
+    "architecture-diagrams",
+    "flowchart",
+    "validation",
+    "claude-code",
+    "skill",
+    "documentation",
+    "onboarding",
+    "interactive"
+  ],
   "skills": "./skills/"
 }
