@@ -4,6 +4,37 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project aims for
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-28
+
+### Added
+
+- `explain`: turn a .drawio suite into one self-contained, interactive HTML page.
+  The real SVG export with a transparent hotspot on every box; clicking one opens
+  a panel with what it is, why it exists, and one concrete fact. Tabs for the
+  overview, the complete canvas, a component picker, and an optional reference
+  section. Walk mode (`n`/`p`) steps through the boxes in reading order, `/`
+  searches and highlights in place, and the URL carries `#diagram/element` so a
+  single box can be linked. Light and dark, keyboard navigable, no network.
+  - `explain.py init` scaffolds one JSON per diagram, pre-seeded with every
+    element id and its label, so no element is silently skipped. Re-runnable:
+    written entries survive, new diagram elements appear as empty slots.
+  - `explain.py build` renders, calibrates, and assembles. It refuses below 90%
+    coverage (`--min-coverage`) instead of shipping a page whose boxes lost text.
+  - `explain.py check` runs the static half; `explain_verify.js` measures in a
+    browser that every hotspot sits within 6 px of the shape it covers.
+  - `--lang en|de` for the UI chrome; content files accept either English
+    (`title/what/why/fact`) or German (`titel/was/warum/fakt`) field names.
+  - Guide: `skills/drawio/references/explain.md`.
+
+### Fixed
+
+- `parse_drawio` resolves a child's geometry through its parent chain, so grouped
+  elements land at their absolute position instead of the group's origin.
+- The drawio-to-SVG offset is derived per diagram rather than assumed constant:
+  each export is centred on its own content bounds, and a canvas with negative
+  coordinates needs a positive offset. A build aborts when the derived offset is
+  not a clear majority of dimension matches.
+
 ## [0.6.2] - 2026-07-21
 
 ### Fixed
