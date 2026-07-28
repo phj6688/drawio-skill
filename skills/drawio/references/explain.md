@@ -46,6 +46,14 @@ elements appear as empty slots. Run it again after every diagram edit.
 | `--no-render` | reuse SVGs already in `--work`; fails if they are missing |
 | `--min-coverage` | fraction of elements that must have text (default 0.90) |
 
+An optional `content/labels.json` names the tabs, because a filename makes a poor
+tab label and an English filename reads badly on a German page:
+
+```json
+{ "01-high-level-overview": "Überblick",
+  "02-orchestration-layer-conductor": "Konduktor-Pipeline" }
+```
+
 ## Writing the content
 
 Each entry has four fields. Keep them short: this is read standing up, mid-sentence.
