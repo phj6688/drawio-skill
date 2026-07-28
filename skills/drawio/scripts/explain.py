@@ -94,6 +94,9 @@ FIELD_ALIASES = {
     "title": ("title", "titel"), "what": ("what", "was"),
     "why": ("why", "warum"), "fact": ("fact", "fakt"),
     "detail": ("detail",),
+    # the diagram's own text, written by `init`. Kept so `check` can tell a real
+    # cross-diagram leak from two boxes that legitimately carry the same label.
+    "_label": ("_label",),
 }
 
 
@@ -567,6 +570,18 @@ const CFG   = {json.dumps(cfg, ensure_ascii=False)};
 '''
 
 
+def _related(a: str, b: str, floor: float = 0.2) -> bool:
+    """Do two labels describe the same thing? Word overlap, plural-tolerant."""
+    def toks(s):
+        return list({w for w in re.findall(r"[a-z0-9\u00e4\u00f6\u00fc\u00df]{3,}", s.lower())})
+    A, B = toks(a), toks(b)
+    if not A or not B:
+        return a.strip().lower() == b.strip().lower()
+    same = lambda x, y: x == y or (len(x) >= 4 and (x.startswith(y) or y.startswith(x)))  # noqa: E731
+    inter = sum(1 for x in A if any(same(x, y) for y in B))
+    return inter / max(1, len(set(A) | set(B))) >= floor
+
+
 def cmd_check(a) -> int:
     """Static checks on a built page: the failures that shipped silently before."""
     text = open(a.html, encoding="utf-8").read()
@@ -592,10 +607,21 @@ def cmd_check(a) -> int:
     for eid, rows in by_id.items():
         for i in range(len(rows)):
             for j in range(i + 1, len(rows)):
-                if rows[i][1].get("what") and rows[i][1] == rows[j][1]:
-                    problems.append(
-                        f"{eid}: identical text in {rows[i][0]} and {rows[j][0]} "
-                        f"(ids repeat across a suite; check it is really the same thing)")
+                a, b = rows[i][1], rows[j][1]
+                if not a.get("what") or a.get("what") != b.get("what"):
+                    continue
+                la, lb = (a.get("_label") or "").strip(), (b.get("_label") or "").strip()
+                # The same concept legitimately appears on the overview and the full
+                # canvas with different wording ("Faithfulness gate: five abstain axes"
+                # vs "Faithfulness gate: 5 axes"), so shared prose there is correct.
+                # A real flat-merge leak has UNRELATED labels ("Pipeline stage" vs
+                # "Export step"), so compare word overlap, not string equality.
+                if la and lb and _related(la, lb):
+                    continue
+                problems.append(
+                    f"{eid}: identical text in {rows[i][0]} ({la or '?'}) and "
+                    f"{rows[j][0]} ({lb or '?'}); ids repeat across a suite, "
+                    f"so check this is really the same thing")
     if problems:
         print(f"explain check: {len(problems)} problem(s)")
         for p in problems[:20]:
