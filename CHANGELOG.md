@@ -4,6 +4,15 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project aims for
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-07-28
+
+### Added
+
+- Optional `content/labels.json` maps a diagram key to its tab label. Filenames
+  make poor tab labels, and an English filename reads badly on a German page
+  ("Mcp tool integration" beside "Nachschlagen"). Suites can now name their own
+  tabs without renaming diagram files; the prettified filename stays the default.
+
 ## [0.7.1] - 2026-07-28
 
 ### Fixed

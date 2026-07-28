@@ -300,6 +300,22 @@ def pretty(name: str) -> str:
     return s.strip().capitalize() or name
 
 
+def load_labels(content_dir: str) -> dict:
+    """Optional content/labels.json: {"<diagram>": "Tab label"}.
+
+    Filenames make poor tab labels, and an English filename reads badly on a
+    German page. This lets the suite name its own tabs without renaming files.
+    """
+    path = os.path.join(content_dir, "labels.json")
+    if not os.path.exists(path):
+        return {}
+    try:
+        raw = json.load(open(path, encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        die(f"{path}: invalid JSON ({e})")
+    return {k: str(v) for k, v in raw.items() if isinstance(v, (str, int))}
+
+
 # --------------------------------------------------------------------------
 # commands
 # --------------------------------------------------------------------------
@@ -363,6 +379,7 @@ def cmd_build(a) -> int:
     diagrams = discover(a.suite, a.components)
     keys = [k for k, _r, _kind in diagrams]
     texts = load_content(a.content, keys)
+    labels = load_labels(a.content)
     work = a.work or os.path.join(a.content, ".work")
     os.makedirs(work, exist_ok=True)
 
@@ -422,7 +439,7 @@ def cmd_build(a) -> int:
             if peers:
                 also[gid] = peers
 
-    page = render_page(built, texts, offsets, also, lang, t, a)
+    page = render_page(built, texts, offsets, also, lang, t, a, labels)
     out = a.out or os.path.join(a.suite, "explain.html")
     with open(out, "w", encoding="utf-8") as f:
         f.write(page)
@@ -434,7 +451,11 @@ def esc(s) -> str:
     return html.escape(str(s or ""), quote=True)
 
 
-def render_page(built, texts, offsets, also, lang, t, a) -> str:
+def render_page(built, texts, offsets, also, lang, t, a, labels=None) -> str:
+    labels = labels or {}
+
+    def tab_label(key, fallback):
+        return labels.get(key) or fallback
     css = open(os.path.join(ASSETS, "explain.css"), encoding="utf-8").read()
     js = open(os.path.join(ASSETS, "explain.js"), encoding="utf-8").read()
 
@@ -467,7 +488,7 @@ def render_page(built, texts, offsets, also, lang, t, a) -> str:
         w, h = b["canvas"]
         return f'''
   <div class="dgbar">
-    <span class="dgtitle">{esc(pretty(key))}</span>
+    <span class="dgtitle">{esc(tab_label(key, pretty(key)))}</span>
     <span class="dgfile">{esc(b["rel"])}</span>
     <div class="dgspace"></div>
     <input class="dgsearch" type="search" data-dg="{esc(key)}"
@@ -512,15 +533,15 @@ def render_page(built, texts, offsets, also, lang, t, a) -> str:
 
     tabs, panels = [], []
     for b in mains:
-        label = t["overview"] if b["kind"] == "overview" else (
-            t["complete"] if b["kind"] == "complete" else pretty(b["key"]))
+        label = tab_label(b["key"], t["overview"] if b["kind"] == "overview" else (
+            t["complete"] if b["kind"] == "complete" else pretty(b["key"])))
         tabs.append(f'<button class="tab" role="tab" data-tab="{esc(b["key"])}">{esc(label)}</button>')
         panels.append(f'<div class="tabpanel" id="panel-{esc(b["key"])}" role="tabpanel" hidden>{body(b)}</div>')
     if comps:
         tabs.append(f'<button class="tab" role="tab" data-tab="__comp">{esc(t["components"])}</button>')
         pills = "".join(
             f'<button class="pill{" on" if i == 0 else ""}" data-comp="{esc(c["key"])}">'
-            f'{esc(pretty(c["key"]))}</button>' for i, c in enumerate(comps))
+            f'{esc(tab_label(c["key"], pretty(c["key"])))}</button>' for i, c in enumerate(comps))
         bodies = "".join(
             f'<div class="comp" data-comp="{esc(c["key"])}"{"" if i == 0 else " hidden"}>{body(c)}</div>'
             for i, c in enumerate(comps))
