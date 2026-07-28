@@ -36,6 +36,14 @@ cuts the review crops, and only a fully cited DONE-CHECK closes the job.
   `STRUCTURE OK - NOT YET VERIFIED`. Only a fully cited DONE-CHECK block closes the job.
 - **19 regression fixtures** reproducing real observed failure modes, plus `smoke.sh` to verify
   the toolchain on a new machine, plus measured character-width calibration.
+- **Interactive explainers** (`explain.py`). A rendered diagram says what the system looks like,
+  not what a box is or why it exists. `explain` builds one self-contained HTML page from a suite:
+  the real SVG export, a transparent hotspot on every box, and a panel with what it is, why we do
+  it, and one concrete fact. Tabs for the overview, the complete canvas, a component picker, and
+  an optional reference section; walk mode steps through the boxes for a live demo; the URL
+  carries `#diagram/element` so one box is a link. English or German UI (`--lang`). Coverage is
+  gated, and alignment is *measured* in a browser rather than eyeballed: every hotspot must sit
+  within 6 px of the shape it covers.
 
 ## Install
 
@@ -52,6 +60,18 @@ No slash command. The skill triggers when a session creates or edits `.drawio` f
 user asks for an architecture, flowchart, ER, or network diagram as a file deliverable. The
 workflow it enforces: author per the doctrine, validate, render, read the crops, hand over with
 the DONE-CHECK.
+
+It also triggers on "explain this architecture to my team", onboarding pages, and walkthroughs:
+
+```bash
+python3 scripts/explain.py init  SUITE --content DIR [--components SUBDIR]
+# write title/what/why/fact into DIR/text.*.json
+python3 scripts/explain.py build SUITE --content DIR [--lang en|de] --out PAGE.html
+python3 scripts/explain.py check PAGE.html
+node     scripts/explain_verify.js PAGE.html      # needs playwright
+```
+
+See `skills/drawio/references/explain.md`.
 
 ## Requirements
 
@@ -97,10 +117,14 @@ set. The exit-code contract above is verified by `tests/contract.py`.
 ```
 skills/drawio/
   SKILL.md              lean core: mode fork, workflow, red flags
-  references/           layout, edges, legend-color, xml, verify doctrines
+  references/           layout, edges, legend-color, xml, verify doctrines,
+                        explain (interactive explainer guide)
+  assets/               explain.css, explain.js (runtime of the generated page)
   scripts/              validate.py, render.sh, emit_crops.py, layout_auto.py,
-                        blankguard.py, calibrate_charwidth.py, constants.py
-  tests/                19 fixtures + expected verdicts + run_fixtures.py
+                        blankguard.py, calibrate_charwidth.py, constants.py,
+                        explain.py, explain_verify.js
+  tests/                19 fixtures + expected verdicts + run_fixtures.py,
+                        contract.py, explain_contract.py
   smoke.sh              first-use toolchain verification
 ```
 

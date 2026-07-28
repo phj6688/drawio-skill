@@ -1,6 +1,6 @@
 ---
 name: drawio
-description: Use when creating or editing draw.io / .drawio / diagrams.net files, when the user asks for an architecture, flowchart, ER, or network diagram as a file deliverable, or when an existing diagram renders with overlaps, stray arrows, unreadable labels, or a missing legend.
+description: Use when creating or editing draw.io / .drawio / diagrams.net files, when the user asks for an architecture, flowchart, ER, or network diagram as a file deliverable, or when an existing diagram renders with overlaps, stray arrows, unreadable labels, or a missing legend. Also use when someone wants an existing diagram or suite EXPLAINED as an interactive page (clickable boxes, popups, onboarding, walkthrough, "explain this architecture to my team").
 ---
 
 # drawio: diagrams that survive being looked at
@@ -25,11 +25,37 @@ Hand-written .drawio XML fails in ways the author cannot see: valid XML, overlap
 5. **Look:** `python3 scripts/emit_crops.py FILE <basename>.png report.json`, then actually read every crop image and the full PNG. Fix what you see, re-render, max 2 rounds. (`render.sh` strips the extension, so `arch.drawio` renders to `arch.png`, not `arch.drawio.png`; `render.sh FILE [OUTBASE]` overrides the base.)
 6. **Hand over with the completed DONE-CHECK block** (skeleton comes pre-filled from emit_crops with gate results and per-crop nonces; you add only what you read in each crop). Format and rules: [references/verify.md](references/verify.md).
 
+## Explaining a diagram (a second job, same skill)
+
+Authoring answers "what is the shape of this system". It does not answer "what is
+that box and why is it there", which is what a team actually asks. When the request
+is a walkthrough, onboarding material, or "explain this architecture to my team",
+build an interactive page instead of narrating in chat:
+
+```bash
+python3 scripts/explain.py init  SUITE_DIR --content DIR [--components SUBDIR]
+# write title/what/why/fact into DIR/text.*.json, one entry per element
+python3 scripts/explain.py build SUITE_DIR --content DIR [--components SUBDIR] \
+        [--lang en|de] [--reference FRAGMENT.html] --out PAGE.html
+python3 scripts/explain.py check PAGE.html
+node     scripts/explain_verify.js PAGE.html      # then LOOK at the page
+```
+
+One self-contained HTML file: the real SVG export, a hotspot on every box, a panel
+with what/why/one fact, walk-through mode, search, deep links. `init` lists every
+element id so nothing gets silently skipped; `build` refuses below 90% coverage.
+Full guide, flags, and the two traps that produce confidently wrong output (the
+per-diagram SVG offset, and ids colliding across a suite): [references/explain.md](references/explain.md).
+
+**The render-and-look rule applies here too.** `check` is static and says
+`NOT YET VERIFIED`. Open the page and click boxes before handing it over.
+
 ## Quick reference
 
 | task | where |
 |---|---|
 | XML skeleton, style strings, killer mistakes | references/xml.md |
+| interactive explainer: flags, content format, verification | references/explain.md |
 | grid formula, mode fork, direction, containers | references/layout.md |
 | pinning, routing, edge labels, arrow semantics, fan-out | references/edges.md |
 | palette, contrast, legend construction and placement | references/legend-color.md |
