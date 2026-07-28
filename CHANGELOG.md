@@ -4,6 +4,19 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project aims for
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-07-28
+
+### Fixed
+
+- `explain check` no longer reports a false leak when two diagrams legitimately
+  share a box. Element ids repeat across a suite, so identical prose on the same
+  id is suspicious, but only when the two boxes are actually different things.
+  The check now carries each element's diagram label into the page and compares
+  word overlap: "sync flow" and "sync flow" are the same legend entry, and
+  "Faithfulness gate: five abstain axes" and "Faithfulness gate: 5 axes" are the
+  same box worded differently. Unrelated labels ("Pipeline stage" against
+  "Export step") still fire, which is the real flat-merge leak.
+
 ## [0.7.0] - 2026-07-28
 
 ### Added
